@@ -35,7 +35,7 @@ public class MedicoController {
     public MedicoResponseDTO updateMedico(@Valid @RequestBody MedicoPatchDTO medicoDTO, @PathVariable Long id){
         return medicoService.actualizarMedico(id, medicoDTO);
     }
-// as
+
     @DeleteMapping("/medicos/{id}")
     public void deleteMedico(@PathVariable Long id){
         medicoService.borrarMedico(id);
