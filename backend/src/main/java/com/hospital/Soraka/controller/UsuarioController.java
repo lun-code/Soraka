@@ -35,7 +35,7 @@ public class UsuarioController {
     }
 
     @PatchMapping("/usuarios/{id}")
-    public UsuarioResponseDTO updateUsuario(@Valid @RequestBody UsuarioPatchDTO usuarioDTO, @PathVariable Long id){
+    public UsuarioResponseDTO patchUsuario(@Valid @RequestBody UsuarioPatchDTO usuarioDTO, @PathVariable Long id){
         return usuarioService.patchUsuario(id, usuarioDTO);
     }
 }
