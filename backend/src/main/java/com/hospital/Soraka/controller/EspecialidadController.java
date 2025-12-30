@@ -36,7 +36,7 @@ public class EspecialidadController {
         return especialidadService.patchEspecialidad(id, especialidad);
     }
 
-    @DeleteMapping("/especialidad/{id}")
+    @DeleteMapping("/especialidades/{id}")
     public void deleteEspecialidad(@PathVariable Long id){
         especialidadService.deleteEspecialidad(id);
     }
