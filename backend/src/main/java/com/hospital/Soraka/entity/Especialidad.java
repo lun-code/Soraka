@@ -11,7 +11,7 @@ import java.util.List;
 @Table(name = "especialidades")
 public class Especialidad {
 
-    // Atributos
+    // ATRIBUTOS
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,14 +24,14 @@ public class Especialidad {
     @OneToMany(mappedBy = "especialidad", fetch = FetchType.LAZY)
     private List<Medico> medicos =  new ArrayList<>();
 
-    // Constructores
+    // CONSTRUCTORES
     public Especialidad(String nombre) {
         this.nombre = nombre;
     }
 
     public Especialidad() {}
 
-    // Setters y getters
+    // GETTERS Y SETTERS
     public Long getId() {
         return id;
     }
