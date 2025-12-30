@@ -16,26 +16,26 @@ public class UsuarioController {
 
     @GetMapping("/usuarios")
     public List<UsuarioResponseDTO> getUsuarios() {
-        return usuarioService.listarUsuarios();
+        return usuarioService.getUsuarios();
     }
 
     @GetMapping("/usuarios/{id}")
-    public UsuarioResponseDTO getUsuario(@PathVariable Long id){
-        return usuarioService.listarUsuarioId(id);
+    public UsuarioResponseDTO getUsuarioById(@PathVariable Long id){
+        return usuarioService.getUsuarioById(id);
     }
 
     @PostMapping("/usuarios")
     public UsuarioResponseDTO createUsuario(@Valid @RequestBody UsuarioPostDTO usuarioDTO){
-        return usuarioService.crearUsuario(usuarioDTO);
-    }
-
-    @PatchMapping("/usuarios/{id}")
-    public UsuarioResponseDTO updateUsuario(@Valid @RequestBody UsuarioPatchDTO usuarioDTO, @PathVariable Long id){
-        return usuarioService.actualizarUsuario(id, usuarioDTO);
+        return usuarioService.createUsuario(usuarioDTO);
     }
 
     @DeleteMapping("/usuarios/{id}")
     public void deleteUsuario(@PathVariable Long id){
-        usuarioService.borrarUsuario(id);
+        usuarioService.deleteUsuario(id);
+    }
+
+    @PatchMapping("/usuarios/{id}")
+    public UsuarioResponseDTO updateUsuario(@Valid @RequestBody UsuarioPatchDTO usuarioDTO, @PathVariable Long id){
+        return usuarioService.patchUsuario(id, usuarioDTO);
     }
 }

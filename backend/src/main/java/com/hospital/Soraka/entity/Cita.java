@@ -44,10 +44,10 @@ public class Cita {
 
     // CONSTRUCTORES
 
-    public Cita(Usuario paciente, LocalDateTime fechaHora, Medico medico, String motivo) {
+    public Cita(Usuario paciente, Medico medico, LocalDateTime fechaHora, String motivo) {
         this.paciente = paciente;
-        this.fechaHora = fechaHora;
         this.medico = medico;
+        this.fechaHora = fechaHora;
         this.estado = EstadoCita.PENDIENTE;
         this.motivo = motivo;
     }

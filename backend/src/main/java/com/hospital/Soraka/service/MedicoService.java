@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,62 +29,44 @@ public class MedicoService {
     @Autowired
     private EspecialidadRepository especialidadRepository;
 
-    public List<MedicoResponseDTO> listarMedicos() {
+    public List<MedicoResponseDTO> getMedicos() {
         return medicoRepository.findAll()
                 .stream()
-                .map(m -> new MedicoResponseDTO(
-                        m.getId(),
-                        m.getUsuario().getId(),
-                        m.getUsuario().getNombre(),
-                        m.getUsuario().getEmail(),
-                        m.getEspecialidad().getId(),
-                        m.getEspecialidad().getNombre()
-                )).toList();
+                .map(this::buildResponse)
+                .toList();
     }
 
-    public MedicoResponseDTO buscarMedicoPorId(Long id){
-        Medico m = medicoRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
+    public MedicoResponseDTO getMedicoById(Long id){
+        Medico medico = medicoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
 
-        return new MedicoResponseDTO(
-                m.getId(),
-                m.getUsuario().getId(),
-                m.getUsuario().getNombre(),
-                m.getUsuario().getEmail(),
-                m.getEspecialidad().getId(),
-                m.getEspecialidad().getNombre()
-        );
+        return buildResponse(medico);
     }
 
-    public MedicoResponseDTO registrarMedico(MedicoPostDTO medicoDTO) {
+    public MedicoResponseDTO createMedico(MedicoPostDTO medico) {
 
-        Usuario usuario = usuarioRepository.findById(medicoDTO.getUsuarioId())
+        Usuario usuario = usuarioRepository.findById(medico.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-        Especialidad especialidad = especialidadRepository.findById(medicoDTO.getEspecialidadId())
+        Especialidad especialidad = especialidadRepository.findById(medico.getEspecialidadId())
                 .orElseThrow(() -> new EntityNotFoundException("Especialidad no encontrada"));
 
         if (medicoRepository.existsByUsuario(usuario)) {
             throw new IllegalArgumentException("El usuario ya está asignado a un médico");
         }
 
-        Medico medico = new Medico();
-        medico.setUsuario(usuario);
-        medico.setEspecialidad(especialidad);
-
-        Medico guardado = medicoRepository.save(medico);
-
-        return new MedicoResponseDTO(
-                guardado.getId(),
-                guardado.getUsuario().getId(),
-                guardado.getUsuario().getNombre(),
-                guardado.getUsuario().getEmail(),
-                guardado.getEspecialidad().getId(),
-                guardado.getEspecialidad().getNombre()
+        Medico nuevoMedico = new Medico(
+                usuario,
+                especialidad
         );
+
+        Medico guardado = medicoRepository.save(nuevoMedico);
+
+        return buildResponse(guardado);
     }
 
 
-    public void borrarMedico(Long id){
+    public void deleteMedico(Long id){
         if(!medicoRepository.existsById(id)){
             throw new EntityNotFoundException("El medico no existe");
         }
@@ -93,7 +74,7 @@ public class MedicoService {
     }
 
     // PATCH
-    public MedicoResponseDTO actualizarMedico(Long id, MedicoPatchDTO medicoDTO){
+    public MedicoResponseDTO patchMedico(Long id, MedicoPatchDTO medicoDTO){
 
         Medico existente = medicoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
@@ -123,13 +104,17 @@ public class MedicoService {
 
         Medico guardado = medicoRepository.save(existente);
 
+        return buildResponse(guardado);
+    }
+
+    private MedicoResponseDTO buildResponse(Medico m) {
         return new MedicoResponseDTO(
-                guardado.getId(),
-                guardado.getUsuario().getId(),
-                guardado.getUsuario().getNombre(),
-                guardado.getUsuario().getEmail(),
-                guardado.getEspecialidad().getId(),
-                guardado.getEspecialidad().getNombre()
+                m.getId(),
+                m.getUsuario().getId(),
+                m.getUsuario().getNombre(),
+                m.getUsuario().getEmail(),
+                m.getEspecialidad().getId(),
+                m.getEspecialidad().getNombre()
         );
     }
 }

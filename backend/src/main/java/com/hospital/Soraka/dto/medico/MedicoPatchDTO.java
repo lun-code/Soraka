@@ -2,12 +2,12 @@ package com.hospital.Soraka.dto.medico;
 
 public class MedicoPatchDTO {
 
-    // Atributos
+    // ATRIBUTOS
     private Long usuarioId;
     private Long especialidadId;
 
 
-    // Getters y setters
+    // GETTERS Y SETTERS
     public Long getUsuarioId() {
         return usuarioId;
     }

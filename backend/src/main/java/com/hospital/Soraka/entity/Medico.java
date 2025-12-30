@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 @Table(name = "medicos")
 public class Medico {
 
+    // ATRIBUTOS
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,6 +18,17 @@ public class Medico {
     @ManyToOne(optional = false)
     @JoinColumn(name = "especialidad_id")
     private Especialidad especialidad;
+
+    // CONSTRUCTORES
+
+    public Medico(Usuario usuario, Especialidad especialidad) {
+        this.usuario = usuario;
+        this.especialidad = especialidad;
+    }
+
+    public Medico() {}
+
+    // GETTERS Y SETTERS
 
     public Long getId() {
         return id;

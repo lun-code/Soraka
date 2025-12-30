@@ -18,26 +18,26 @@ public class MedicoController {
 
     @GetMapping("/medicos")
     public List<MedicoResponseDTO> getMedicos(){
-        return medicoService.listarMedicos();
+        return medicoService.getMedicos();
     }
 
     @GetMapping("/medicos/{id}")
-    public MedicoResponseDTO getMedico(@PathVariable Long id){
-        return medicoService.buscarMedicoPorId(id);
+    public MedicoResponseDTO getMedicoById(@PathVariable Long id){
+        return medicoService.getMedicoById(id);
     }
 
     @PostMapping("/medicos")
-    public MedicoResponseDTO createMedico(@Valid @RequestBody MedicoPostDTO medicoDTO){
-        return medicoService.registrarMedico(medicoDTO);
-    }
-
-    @PatchMapping("/medicos/{id}")
-    public MedicoResponseDTO updateMedico(@Valid @RequestBody MedicoPatchDTO medicoDTO, @PathVariable Long id){
-        return medicoService.actualizarMedico(id, medicoDTO);
+    public MedicoResponseDTO createMedico(@Valid @RequestBody MedicoPostDTO medico){
+        return medicoService.createMedico(medico);
     }
 
     @DeleteMapping("/medicos/{id}")
     public void deleteMedico(@PathVariable Long id){
-        medicoService.borrarMedico(id);
+        medicoService.deleteMedico(id);
+    }
+
+    @PatchMapping("/medicos/{id}")
+    public MedicoResponseDTO patchMedico(@Valid @RequestBody MedicoPatchDTO medico, @PathVariable Long id){
+        return medicoService.patchMedico(id, medico);
     }
 }

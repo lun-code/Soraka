@@ -24,7 +24,7 @@ public class UsuarioService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public List<UsuarioResponseDTO> listarUsuarios() {
+    public List<UsuarioResponseDTO> getUsuarios() {
         return usuarioRepository.findAll()
                 .stream()
                 .map(u -> new UsuarioResponseDTO(
@@ -38,7 +38,7 @@ public class UsuarioService {
                 .toList();
     }
 
-    public UsuarioResponseDTO listarUsuarioId(Long id) {
+    public UsuarioResponseDTO getUsuarioById(Long id) {
         Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
 
         return new UsuarioResponseDTO(
@@ -51,7 +51,7 @@ public class UsuarioService {
         );
     }
 
-    public UsuarioResponseDTO crearUsuario(UsuarioPostDTO usuarioDTO) {
+    public UsuarioResponseDTO createUsuario(UsuarioPostDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
             throw new EmailYaEnUsoException("Email ya existente");
         }
@@ -74,7 +74,7 @@ public class UsuarioService {
         );
     }
 
-    public void borrarUsuario(Long id) {
+    public void deleteUsuario(Long id) {
         if(!usuarioRepository.existsById(id)){
             throw new UsuarioNotFoundException("Usuario no encontrado");
         }
@@ -82,7 +82,7 @@ public class UsuarioService {
     }
 
     // PATCH
-    public UsuarioResponseDTO actualizarUsuario(Long id, UsuarioPatchDTO usuarioDTO) {
+    public UsuarioResponseDTO patchUsuario(Long id, UsuarioPatchDTO usuarioDTO) {
 
         Usuario existente = usuarioRepository.findById(id).orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
 
