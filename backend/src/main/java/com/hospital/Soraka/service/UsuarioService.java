@@ -6,6 +6,7 @@ import com.hospital.Soraka.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +16,10 @@ public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     /**
      * Devuelve todos los usuarios. Solo accesible por admins.
@@ -43,9 +48,10 @@ public class UsuarioService {
      */
     @PreAuthorize("hasAuthority('ADMIN')")
     public UsuarioResponseDTO createUsuario(UsuarioPostDTO usuarioDTO){
-        Usuario nuevo = new Usuario(usuarioDTO.getNombre(),
+        Usuario nuevo = new Usuario(
+                usuarioDTO.getNombre(),
                 usuarioDTO.getEmail(),
-                usuarioDTO.getPassword(),
+                passwordEncoder.encode(usuarioDTO.getPassword()),
                 usuarioDTO.getRol());
         Usuario guardado = usuarioRepository.save(nuevo);
         return buildResponse(guardado);

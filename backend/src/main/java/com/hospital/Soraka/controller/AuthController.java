@@ -46,25 +46,31 @@ public class AuthController {
     @PostMapping("/auth/login")
     public LoginResponseDTO login(@RequestBody LoginRequestDTO dto) {
 
-        // Autentica las credenciales usando Spring Security
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
-        );
+        try{
+            // Autentica las credenciales usando Spring Security
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
+            );
 
-        // Obtiene el usuario autenticado
-        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+            // Obtiene el usuario autenticado
+            UserDetails userDetails = (UserDetails) auth.getPrincipal();
 
-        // Genera un token JWT con la información del usuario
-        String token = jwtService.generateToken(userDetails);
+            // Genera un token JWT con la información del usuario
+            String token = jwtService.generateToken(userDetails);
 
-        // Devuelve el token al cliente
-        return new LoginResponseDTO(token);
+            // Devuelve el token al cliente
+            return new LoginResponseDTO(token);
+        }catch (Exception e){
+            e.printStackTrace();
+            throw e;
+        }
+
     }
 
     @Autowired
     UsuarioService usuarioService;
 
-    @PreAuthorize("hasAuthority('MEDICO')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/auth/register")
     public UsuarioResponseDTO register(@RequestBody UsuarioPostDTO dto){
         return usuarioService.createUsuario(dto);

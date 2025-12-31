@@ -13,7 +13,7 @@ public class JwtService {
 
     // Clave secreta utilizada para firmar los tokens
     // En proyectos reales debería ser mucho más larga y almacenada de forma segura (env vars)
-    private final String SECRET_KEY = "SECRETKEY";
+    private final String SECRET_KEY = "una-clave-muy-larga-de-mas-de-32-caracteres123";
 
     /**
      * Genera un token JWT para un usuario
