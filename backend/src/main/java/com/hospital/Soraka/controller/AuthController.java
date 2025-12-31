@@ -2,7 +2,12 @@ package com.hospital.Soraka.controller;
 
 import com.hospital.Soraka.dto.login.LoginRequestDTO;
 import com.hospital.Soraka.dto.login.LoginResponseDTO;
+import com.hospital.Soraka.dto.usuario.UsuarioPostDTO;
+import com.hospital.Soraka.dto.usuario.UsuarioResponseDTO;
 import com.hospital.Soraka.security.JwtService;
+import com.hospital.Soraka.service.UsuarioService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -54,5 +59,14 @@ public class AuthController {
 
         // Devuelve el token al cliente
         return new LoginResponseDTO(token);
+    }
+
+    @Autowired
+    UsuarioService usuarioService;
+
+    @PreAuthorize("hasAuthority('MEDICO')")
+    @PostMapping("/auth/register")
+    public UsuarioResponseDTO register(@RequestBody UsuarioPostDTO dto){
+        return usuarioService.createUsuario(dto);
     }
 }

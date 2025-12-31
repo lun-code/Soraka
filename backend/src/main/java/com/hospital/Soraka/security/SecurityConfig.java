@@ -3,6 +3,9 @@ package com.hospital.Soraka.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -57,8 +60,32 @@ public class SecurityConfig {
                 )
                 // Define permisos de acceso a endpoints
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // login y registro abiertos
-                        .anyRequest().authenticated()            // resto requiere autenticación
+
+                        // Endpoints públicos
+
+                        // Login
+                        .requestMatchers("/auth/login").permitAll()
+
+
+                        // Endpoints protegidos por autenticación o rol
+
+                        // Registro
+                        .requestMatchers(HttpMethod.POST, "/auth/register").hasAuthority("MEDICO")
+
+                        // Usuarios
+                        .requestMatchers("/usuarios/**").authenticated()
+
+                        // Medicos
+                        .requestMatchers("/medicos/**").authenticated()
+
+                        // Citas
+                        .requestMatchers("/citas/**").authenticated()
+
+                        // Especialidades
+                        .requestMatchers("/especialidades/**").authenticated()
+
+                        // Cualquier otra petición requiere autenticación
+                        .anyRequest().authenticated()
                 )
                 // Añade el filtro JWT antes del filtro de login de Spring
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -78,5 +105,32 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    /**
+     * Bean que define la jerarquía de roles para la aplicación.
+     * <p>
+     * Permite que Spring Security interprete que ciertos roles heredan
+     * automáticamente los privilegios de otros roles. Por ejemplo:
+     * <ul>
+     *     <li>ADMIN > MEDICO: un ADMIN tiene todos los privilegios de un MEDICO.</li>
+     *     <li>MEDICO > PACIENTE: un MEDICO tiene todos los privilegios de un PACIENTE.</li>
+     * </ul>
+     * Esto se aplica automáticamente en los checks de autorización,
+     * como hasRole() o hasAuthority().
+     *
+     * @return RoleHierarchy configurada con la jerarquía de roles definida.
+     */
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+
+        // Se crea la implementación de la jerarquía de roles
+        RoleHierarchyImpl hierarchy = new RoleHierarchyImpl();
+
+        // Se define la jerarquía: ADMIN > MEDICO, MEDICO > PACIENTE
+        hierarchy.setHierarchy("ADMIN > MEDICO \n MEDICO > PACIENTE");
+
+        // Se devuelve el bean para que Spring Security lo use
+        return hierarchy;
     }
 }

@@ -1,123 +1,92 @@
 package com.hospital.Soraka.service;
 
+import com.hospital.Soraka.dto.usuario.*;
 import com.hospital.Soraka.entity.Usuario;
-import com.hospital.Soraka.exception.EmailYaEnUsoException;
-import com.hospital.Soraka.exception.UsuarioNotFoundException;
 import com.hospital.Soraka.repository.UsuarioRepository;
-import com.hospital.Soraka.dto.usuario.UsuarioPatchDTO;
-import com.hospital.Soraka.dto.usuario.UsuarioPostDTO;
-import com.hospital.Soraka.dto.usuario.UsuarioResponseDTO;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@Transactional
 public class UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
+    /**
+     * Devuelve todos los usuarios. Solo accesible por admins.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
     public List<UsuarioResponseDTO> getUsuarios() {
         return usuarioRepository.findAll()
                 .stream()
-                .map(u -> new UsuarioResponseDTO(
-                        u.getId(),
-                        u.getNombre(),
-                        u.getEmail(),
-                        u.getRol(),
-                        u.isActivo(),
-                        u.getFechaRegistro()
-                ))
+                .map(this::buildResponse)
                 .toList();
     }
 
-    public UsuarioResponseDTO getUsuarioById(Long id) {
-        Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
-
-        return new UsuarioResponseDTO(
-                usuario.getId(),
-                usuario.getNombre(),
-                usuario.getEmail(),
-                usuario.getRol(),
-                usuario.isActivo(),
-                usuario.getFechaRegistro()
-        );
+    /**
+     * Devuelve un usuario por su id.
+     * Solo accesible por admins o por el propio usuario (lectura de su perfil).
+     */
+    @PreAuthorize("hasAuthority('ADMIN') or #id == principal.id")
+    public UsuarioResponseDTO getUsuarioById(Long id){
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+        return buildResponse(usuario);
     }
 
-    public UsuarioResponseDTO createUsuario(UsuarioPostDTO usuarioDTO) {
-        if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
-            throw new EmailYaEnUsoException("Email ya existente");
-        }
-
-        Usuario usuario = new Usuario();
-        usuario.setNombre(usuarioDTO.getNombre());
-        usuario.setEmail(usuarioDTO.getEmail());
-        usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-        usuario.setRol(usuarioDTO.getRol());
-
-        Usuario saved = usuarioRepository.save(usuario);
-
-        return new UsuarioResponseDTO(
-                saved.getId(),
-                saved.getNombre(),
-                saved.getEmail(),
-                saved.getRol(),
-                saved.isActivo(),
-                saved.getFechaRegistro()
-        );
+    /**
+     * Crear un usuario nuevo. Solo admins.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public UsuarioResponseDTO createUsuario(UsuarioPostDTO usuarioDTO){
+        Usuario nuevo = new Usuario(usuarioDTO.getNombre(),
+                usuarioDTO.getEmail(),
+                usuarioDTO.getPassword(),
+                usuarioDTO.getRol());
+        Usuario guardado = usuarioRepository.save(nuevo);
+        return buildResponse(guardado);
     }
 
-    public void deleteUsuario(Long id) {
+    /**
+     * Eliminar un usuario. Solo admins.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public void deleteUsuario(Long id){
         if(!usuarioRepository.existsById(id)){
-            throw new UsuarioNotFoundException("Usuario no encontrado");
+            throw new EntityNotFoundException("Usuario no encontrado");
         }
         usuarioRepository.deleteById(id);
     }
 
-    // PATCH
-    public UsuarioResponseDTO patchUsuario(Long id, UsuarioPatchDTO usuarioDTO) {
+    /**
+     * Actualizar usuario. Solo admins pueden modificar datos.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public UsuarioResponseDTO patchUsuario(Long id, UsuarioPatchDTO usuarioDTO){
+        Usuario existente = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-        Usuario existente = usuarioRepository.findById(id).orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+        if(usuarioDTO.getNombre() != null) existente.setNombre(usuarioDTO.getNombre());
+        if(usuarioDTO.getEmail() != null) existente.setEmail(usuarioDTO.getEmail());
+        if(usuarioDTO.getRol() != null) existente.setRol(usuarioDTO.getRol());
+        // Nunca permitir que el usuario cambie isActivo o fechaRegistro por sí mismo
 
-        if (usuarioDTO.getNombre() != null) {
-            existente.setNombre(usuarioDTO.getNombre());
-        }
+        Usuario actualizado = usuarioRepository.save(existente);
+        return buildResponse(actualizado);
+    }
 
-        if (usuarioDTO.getRol() != null) {
-            existente.setRol(usuarioDTO.getRol());
-        }
-
-        if (usuarioDTO.getIsActivo() != null) {
-            existente.setActivo(usuarioDTO.getIsActivo());
-        }
-
-        if (usuarioDTO.getEmail() != null && !existente.getEmail().equals(usuarioDTO.getEmail())) { // Si el email no es null y no es igual
-            if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) { // Si existe un usuario con el email introducido
-                throw new EmailYaEnUsoException("El email ya está en uso");
-            }
-            existente.setEmail(usuarioDTO.getEmail());
-        }
-
-        if (usuarioDTO.getPassword() != null && !usuarioDTO.getPassword().isBlank()) {
-            existente.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-        }
-
-        Usuario usuarioUpdated = usuarioRepository.save(existente);
-
+    private UsuarioResponseDTO buildResponse(Usuario u) {
         return new UsuarioResponseDTO(
-                usuarioUpdated.getId(),
-                usuarioUpdated.getNombre(),
-                usuarioUpdated.getEmail(),
-                usuarioUpdated.getRol(),
-                usuarioUpdated.isActivo(),
-                usuarioUpdated.getFechaRegistro()
+                u.getId(),
+                u.getNombre(),
+                u.getEmail(),
+                u.getRol(),
+                u.isActivo(),
+                u.getFechaRegistro()
         );
     }
 }

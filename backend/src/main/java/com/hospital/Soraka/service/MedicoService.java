@@ -12,6 +12,7 @@ import com.hospital.Soraka.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,6 +30,9 @@ public class MedicoService {
     @Autowired
     private EspecialidadRepository especialidadRepository;
 
+    /**
+     * Listado de todos los médicos. Visible para cualquier usuario autenticado.
+     */
     public List<MedicoResponseDTO> getMedicos() {
         return medicoRepository.findAll()
                 .stream()
@@ -36,6 +40,9 @@ public class MedicoService {
                 .toList();
     }
 
+    /**
+     * Consulta un médico por su ID.
+     */
     public MedicoResponseDTO getMedicoById(Long id){
         Medico medico = medicoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
@@ -43,8 +50,11 @@ public class MedicoService {
         return buildResponse(medico);
     }
 
+    /**
+     * Crear un nuevo médico. Solo admins pueden.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
     public MedicoResponseDTO createMedico(MedicoPostDTO medico) {
-
         Usuario usuario = usuarioRepository.findById(medico.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
@@ -55,17 +65,15 @@ public class MedicoService {
             throw new IllegalArgumentException("El usuario ya está asignado a un médico");
         }
 
-        Medico nuevoMedico = new Medico(
-                usuario,
-                especialidad
-        );
-
+        Medico nuevoMedico = new Medico(usuario, especialidad);
         Medico guardado = medicoRepository.save(nuevoMedico);
-
         return buildResponse(guardado);
     }
 
-
+    /**
+     * Elimina un médico por ID. Solo admins pueden.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
     public void deleteMedico(Long id){
         if(!medicoRepository.existsById(id)){
             throw new EntityNotFoundException("El medico no existe");
@@ -73,27 +81,25 @@ public class MedicoService {
         medicoRepository.deleteById(id);
     }
 
-    // PATCH
+    /**
+     * Modifica un médico existente. Solo admins pueden.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
     public MedicoResponseDTO patchMedico(Long id, MedicoPatchDTO medicoDTO){
-
         Medico existente = medicoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
 
-        // Cambiar especialidad si viene
         if(medicoDTO.getEspecialidadId() != null){
             Especialidad especialidad = especialidadRepository.findById(medicoDTO.getEspecialidadId())
                     .orElseThrow(() -> new EntityNotFoundException("Especialidad no encontrada"));
-
             existente.setEspecialidad(especialidad);
         }
 
-        // Cambiar usuario si viene
         if(medicoDTO.getUsuarioId() != null){
             Usuario usuario = usuarioRepository.findById(medicoDTO.getUsuarioId())
                     .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-            // Verificar que ese usuario no esté ya asignado a otro médico
-            medicoRepository.findByUsuario(usuario) // Devuelve el médico que tenga el usuario asociado
+            medicoRepository.findByUsuario(usuario)
                     .filter(m -> !m.getId().equals(id))
                     .ifPresent(m -> {
                         throw new IllegalArgumentException("El usuario ya está asignado a otro médico");
@@ -103,7 +109,6 @@ public class MedicoService {
         }
 
         Medico guardado = medicoRepository.save(existente);
-
         return buildResponse(guardado);
     }
 
