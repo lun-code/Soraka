@@ -65,7 +65,7 @@ public class CitaService {
     /**
      * Comprueba si una cita pertenece a un paciente concreto.
      * <p>
-     * Este métodoo se utiliza principalmente en expresiones {@link PreAuthorize}
+     * Este método se utiliza principalmente en expresiones {@link PreAuthorize}
      * para validar que el usuario autenticado es el propietario de la cita.
      *
      * @param citaId identificador de la cita
