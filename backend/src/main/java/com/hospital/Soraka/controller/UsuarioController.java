@@ -4,6 +4,7 @@ import com.hospital.Soraka.service.UsuarioService;
 import com.hospital.Soraka.dto.usuario.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,8 +52,9 @@ public class UsuarioController {
      * @param id ID del usuario a eliminar.
      */
     @DeleteMapping("/usuarios/{id}")
-    public void deleteUsuario(@PathVariable Long id){
+    public ResponseEntity<Void> deleteUsuario(@PathVariable Long id){
         usuarioService.deleteUsuario(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 
     /**

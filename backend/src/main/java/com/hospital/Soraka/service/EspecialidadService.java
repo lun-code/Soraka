@@ -80,13 +80,13 @@ public class EspecialidadService {
      * Accesible solo para administradores.
      *
      * @param id ID de la especialidad a eliminar.
-     * @throws IllegalArgumentException si la especialidad no existe.
+     * @throws EntityNotFoundException si la especialidad no existe.
      */
     @PreAuthorize("hasAuthority('ADMIN')")
     public void deleteEspecialidad(Long id) {
 
         if (!especialidadRepository.existsById(id)) {
-            throw new IllegalArgumentException("No existe esa especialidad.");
+            throw new EntityNotFoundException("No existe esa especialidad.");
         }
         especialidadRepository.deleteById(id);
     }

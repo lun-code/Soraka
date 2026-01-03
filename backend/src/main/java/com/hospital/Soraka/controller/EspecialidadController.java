@@ -6,6 +6,7 @@ import com.hospital.Soraka.dto.especialidad.EspecialidadResponseDTO;
 import com.hospital.Soraka.service.EspecialidadService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,7 +32,7 @@ public class EspecialidadController {
      * @return Lista de EspecialidadResponseDTO con todas las especialidades.
      */
     @GetMapping("/especialidades")
-    public List<EspecialidadResponseDTO> getEspecialidades(){
+    public List<EspecialidadResponseDTO> getEspecialidades() {
         return especialidadService.getEspecialidades();
     }
 
@@ -42,7 +43,7 @@ public class EspecialidadController {
      * @return EspecialidadResponseDTO con los datos de la especialidad.
      */
     @GetMapping("/especialidades/{id}")
-    public EspecialidadResponseDTO getEspecialidadById(@PathVariable Long id){
+    public EspecialidadResponseDTO getEspecialidadById(@PathVariable Long id) {
         return especialidadService.getEspecialidadById(id);
     }
 
@@ -54,7 +55,7 @@ public class EspecialidadController {
      * @return EspecialidadResponseDTO con la especialidad creada.
      */
     @PostMapping("/especialidades")
-    public EspecialidadResponseDTO createEspecialidad(@Valid @RequestBody EspecialidadPostDTO especialidad){
+    public EspecialidadResponseDTO createEspecialidad(@Valid @RequestBody EspecialidadPostDTO especialidad) {
         return especialidadService.createEspecialidad(especialidad);
     }
 
@@ -67,7 +68,7 @@ public class EspecialidadController {
      * @return EspecialidadResponseDTO con la especialidad actualizada.
      */
     @PatchMapping("/especialidades/{id}")
-    public EspecialidadResponseDTO patchEspecialidad(@PathVariable Long id, @Valid @RequestBody EspecialidadPatchDTO especialidad){
+    public EspecialidadResponseDTO patchEspecialidad(@PathVariable Long id, @Valid @RequestBody EspecialidadPatchDTO especialidad) {
         return especialidadService.patchEspecialidad(id, especialidad);
     }
 
@@ -78,7 +79,8 @@ public class EspecialidadController {
      * @param id Identificador de la especialidad a eliminar.
      */
     @DeleteMapping("/especialidades/{id}")
-    public void deleteEspecialidad(@PathVariable Long id){
+    public ResponseEntity<Void> deleteEspecialidad(@PathVariable Long id) {
         especialidadService.deleteEspecialidad(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 }

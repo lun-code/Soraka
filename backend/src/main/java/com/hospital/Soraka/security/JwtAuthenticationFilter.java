@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Métodoo principal del filtro que valida el JWT de cada request.
+     * Método principal del filtro que valida el JWT de cada request.
      * Flujo:
      * 1. Obtiene el header Authorization de la request.
      * 2. Si no existe o no empieza con "Bearer ", pasa al siguiente filtro.

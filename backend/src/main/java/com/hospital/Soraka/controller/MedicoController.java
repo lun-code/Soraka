@@ -6,6 +6,7 @@ import com.hospital.Soraka.dto.medico.MedicoResponseDTO;
 import com.hospital.Soraka.service.MedicoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -64,8 +65,9 @@ public class MedicoController {
      * @param id Id del médico a eliminar.
      */
     @DeleteMapping("/medicos/{id}")
-    public void deleteMedico(@PathVariable Long id){
+    public ResponseEntity<Void> deleteMedico(@PathVariable Long id){
         medicoService.deleteMedico(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 
     /**
