@@ -1,20 +1,22 @@
 package com.hospital.Soraka.service;
 
-import com.hospital.Soraka.dto.cita.CitaPatchDTO;
-import com.hospital.Soraka.dto.cita.CitaPostDTO;
-import com.hospital.Soraka.dto.cita.CitaResponseDTO;
+import com.hospital.Soraka.dto.cita.*;
 import com.hospital.Soraka.entity.Cita;
 import com.hospital.Soraka.entity.Medico;
 import com.hospital.Soraka.entity.Usuario;
+import com.hospital.Soraka.enums.EstadoCita;
 import com.hospital.Soraka.repository.CitaRepository;
 import com.hospital.Soraka.repository.MedicoRepository;
 import com.hospital.Soraka.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -74,7 +76,9 @@ public class CitaService {
     public boolean perteneceAlPaciente(Long citaId, Long pacienteId) {
         Cita cita = citaRepository.findById(citaId)
                 .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
-        return cita.getPaciente().getId().equals(pacienteId);
+
+        return cita.getPaciente() != null
+                && cita.getPaciente().getId().equals(pacienteId);
     }
 
     /**
@@ -115,6 +119,21 @@ public class CitaService {
         Cita existente = citaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
         return buildResponse(existente);
+    }
+
+    /**
+     * Lista todas las citas disponibles (estado DISPONIBLE) a partir de la fecha y hora actual.
+     * <p>
+     * Se puede acceder a este método por pacientes, médicos o administradores.
+     *
+     * @return lista de {@link CitaResponseDTO} correspondientes a citas disponibles
+     */
+    @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
+    public List<CitaResponseDTO> listarDisponibles() {
+        return citaRepository.findByEstadoAndFechaHoraAfter(
+                EstadoCita.DISPONIBLE,
+                LocalDateTime.now()
+        ).stream().map(this::buildResponse).toList();
     }
 
     /**
@@ -216,6 +235,139 @@ public class CitaService {
     }
 
     /**
+     * Genera automáticamente citas disponibles para un médico dentro de un rango de fechas.
+     * <p>
+     * Cada cita se crea con:
+     * <ul>
+     *     <li>Paciente = null</li>
+     *     <li>Estado = DISPONIBLE</li>
+     * </ul>
+     * Se evita crear citas duplicadas si ya existe una cita del mismo médico en la misma fecha y hora.
+     *
+     * <p>
+     * Este método se puede ejecutar de forma programada usando {@link Scheduled} para automatizar
+     * la generación de citas en la aplicación.
+     */
+    @Scheduled(cron = "0 0 0 * * *") // Todos los días a medianoche
+    public void generarCitasDisponibles() {
+
+        List<Medico> medicos = medicoRepository.findAll();
+        LocalDate hoy = LocalDate.now();
+
+        for (Medico medico : medicos) {
+
+            LocalDate fecha = hoy; // hoy incluido
+            LocalDate fechaFin = hoy.plusDays(7); // 1 semana vista
+
+            while (!fecha.isAfter(fechaFin)) {
+
+                LocalDateTime hora = fecha.atTime(8, 0);
+                LocalDateTime fin = fecha.atTime(15, 0);
+
+                while (hora.isBefore(fin)) {
+
+                    if (!citaRepository.existsByMedicoAndFechaHora(medico, hora)) {
+                        Cita cita = new Cita();
+                        cita.setMedico(medico);
+                        cita.setFechaHora(hora);
+                        cita.setEstado(EstadoCita.DISPONIBLE);
+                        citaRepository.save(cita);
+                    }
+
+                    hora = hora.plusMinutes(30);
+                }
+
+                fecha = fecha.plusDays(1);
+            }
+        }
+    }
+
+    /**
+     * Reserva una cita disponible para un paciente.
+     * <p>
+     * Cambia el estado de la cita a CONFIRMADA y asigna el paciente y el motivo de la reserva.
+     * <p>
+     * Valida que la cita exista y que esté en estado DISPONIBLE antes de reservarla.
+     *
+     * @param citaId identificador de la cita a reservar
+     * @param paciente paciente que reserva la cita
+     * @param dto contiene el motivo de la cita
+     * @throws RuntimeException si la cita no existe
+     * @throws IllegalStateException si la cita no está disponible
+     */
+    @PreAuthorize("hasAuthority('PACIENTE')")
+    public void reservarCita(Long citaId, Usuario paciente, ReservarCitaDTO dto) {
+
+        Cita cita = citaRepository.findById(citaId)
+                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
+
+        if (cita.getEstado() != EstadoCita.DISPONIBLE) {
+            throw new IllegalStateException("La cita no está disponible");
+        }
+
+        cita.setPaciente(paciente);
+        cita.setMotivo(dto.getMotivo());
+        cita.setEstado(EstadoCita.CONFIRMADA);
+
+        citaRepository.save(cita);
+    }
+
+    /**
+     * Cancela una cita previamente confirmada para un paciente.
+     * <p>
+     * Solo puede cancelar su propia cita y la cita debe estar en estado CONFIRMADA.
+     * Tras cancelar, la cita vuelve a estar DISPONIBLE y sin paciente ni motivo asignado.
+     *
+     * @param citaId identificador de la cita a cancelar
+     * @param paciente paciente que solicita la cancelación
+     * @throws EntityNotFoundException si la cita no existe
+     * @throws IllegalStateException si la cita no está confirmada
+     * @throws SecurityException si el paciente no es propietario de la cita
+     */
+    @PreAuthorize("hasAuthority('PACIENTE')")
+    public void cancelarCita(Long citaId, Usuario paciente) {
+
+        Cita cita = citaRepository.findById(citaId)
+                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
+
+        if (cita.getEstado() != EstadoCita.CONFIRMADA) {
+            throw new IllegalStateException("Solo se pueden cancelar citas confirmadas");
+        }
+
+        if (!cita.getPaciente().getId().equals(paciente.getId())) {
+            throw new SecurityException("No puedes cancelar esta cita");
+        }
+
+        cita.setPaciente(null);
+        cita.setMotivo(null);
+        cita.setEstado(EstadoCita.DISPONIBLE);
+
+        citaRepository.save(cita);
+    }
+
+    /**
+     * Marca automáticamente como REALIZADAS todas las citas confirmadas
+     * cuya fecha y hora ya ha pasado.
+     * <p>
+     * Este método se puede ejecutar de manera programada para mantener actualizado
+     * el estado de las citas en el sistema.
+     */
+    @Scheduled(cron = "0 */10 * * * *") // cada 10 minutos
+    public void cerrarCitasPasadas() {
+
+        List<Cita> citasPasadas = citaRepository.findByFechaHoraBefore(LocalDateTime.now());
+
+        for (Cita c : citasPasadas) {
+            if (c.getEstado() == EstadoCita.CONFIRMADA) {
+                c.setEstado(EstadoCita.REALIZADA);
+            } else if (c.getEstado() == EstadoCita.DISPONIBLE) {
+                c.setEstado(EstadoCita.CADUCADA);
+            }
+        }
+        citaRepository.saveAll(citasPasadas);
+    }
+
+    /**
      * Construye un {@link CitaResponseDTO} a partir de una entidad {@link Cita}.
      *
      * @param c entidad cita
@@ -224,8 +376,8 @@ public class CitaService {
     private CitaResponseDTO buildResponse(Cita c) {
         return new CitaResponseDTO(
                 c.getId(),
-                c.getPaciente().getId(),
-                c.getPaciente().getNombre(),
+                c.getPaciente() != null ? c.getPaciente().getId() : null,
+                c.getPaciente() != null ? c.getPaciente().getNombre() : null,
                 c.getMedico().getId(),
                 c.getMedico().getUsuario().getNombre(),
                 c.getMedico().getEspecialidad().getNombre(),

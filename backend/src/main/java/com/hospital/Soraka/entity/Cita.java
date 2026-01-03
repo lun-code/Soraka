@@ -18,9 +18,8 @@ public class Cita {
     private Long id;
 
     @JsonIgnore
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "paciente_id", nullable = false)
-    @NotNull(message = "El paciente es obligatorio")
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "paciente_id", nullable = true)
     private Usuario paciente;
 
     @JsonIgnore
@@ -42,16 +41,28 @@ public class Cita {
     @Size(max = 255, message = "El motivo no puede superar 255 caracteres")
     private String motivo;
 
+    @Version
+    private Long version;
+
     // CONSTRUCTORES
 
+    // Constructor para generar CITAS DISPONIBLES
+    public Cita(Medico medico, LocalDateTime fechaHora) {
+        this.medico = medico;
+        this.fechaHora = fechaHora;
+        this.estado = EstadoCita.DISPONIBLE;
+    }
+
+    // Constructor para reservar una cita
     public Cita(Usuario paciente, Medico medico, LocalDateTime fechaHora, String motivo) {
         this.paciente = paciente;
         this.medico = medico;
         this.fechaHora = fechaHora;
-        this.estado = EstadoCita.PENDIENTE;
+        this.estado = EstadoCita.CONFIRMADA;
         this.motivo = motivo;
     }
 
+    // Constructor vacío para JPA
     public Cita() {}
 
     // SETTERS Y GETTERS

@@ -1,7 +1,8 @@
 package com.hospital.Soraka.enums;
 
 public enum EstadoCita {
-    PENDIENTE,
+    DISPONIBLE,
     CONFIRMADA,
-    CANCELADA
+    REALIZADA,
+    CADUCADA
 }

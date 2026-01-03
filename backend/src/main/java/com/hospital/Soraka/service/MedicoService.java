@@ -6,6 +6,7 @@ import com.hospital.Soraka.dto.medico.MedicoResponseDTO;
 import com.hospital.Soraka.entity.Especialidad;
 import com.hospital.Soraka.entity.Medico;
 import com.hospital.Soraka.entity.Usuario;
+import com.hospital.Soraka.enums.Rol;
 import com.hospital.Soraka.repository.EspecialidadRepository;
 import com.hospital.Soraka.repository.MedicoRepository;
 import com.hospital.Soraka.repository.UsuarioRepository;
@@ -60,6 +61,10 @@ public class MedicoService {
 
         Especialidad especialidad = especialidadRepository.findById(medico.getEspecialidadId())
                 .orElseThrow(() -> new EntityNotFoundException("Especialidad no encontrada"));
+
+        if (usuario.getRol() != Rol.MEDICO) {
+            throw new IllegalArgumentException("El usuario debe tener rol MEDICO para ser asignado como médico");
+        }
 
         if (medicoRepository.existsByUsuario(usuario)) {
             throw new IllegalArgumentException("El usuario ya está asignado a un médico");
