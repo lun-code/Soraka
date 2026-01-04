@@ -19,5 +19,7 @@ public interface CitaRepository extends JpaRepository<Cita,Long> {
 
     List<Cita> findByFechaHoraBefore(LocalDateTime fechaHora);
 
+    List<Cita> findByFechaHoraBeforeAndEstadoIn(LocalDateTime fechaHora, List<EstadoCita> confirmada);
+
     boolean existsByMedicoAndFechaHora(Medico medico, LocalDateTime fechaHora);
 }

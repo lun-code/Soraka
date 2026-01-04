@@ -200,9 +200,10 @@ public class CitaService {
     public void generarCitasDisponibles() {
         List<Medico> medicos = medicoRepository.findAll();
         LocalDate hoy = LocalDate.now();
+        LocalDateTime ahora = LocalDateTime.now();
 
         for (Medico medico : medicos) {
-            LocalDate fecha = hoy;
+            LocalDate fecha = hoy.plusDays(1);
             LocalDate fechaFin = hoy.plusDays(7);
 
             while (!fecha.isAfter(fechaFin)) {
@@ -210,7 +211,8 @@ public class CitaService {
                 LocalDateTime fin = fecha.atTime(15, 0);
 
                 while (hora.isBefore(fin)) {
-                    if (!citaRepository.existsByMedicoAndFechaHora(medico, hora)) {
+                    if (hora.isAfter(ahora) && !citaRepository.existsByMedicoAndFechaHora(medico, hora)) {
+
                         Cita cita = new Cita();
                         cita.setMedico(medico);
                         cita.setFechaHora(hora);
@@ -284,11 +286,19 @@ public class CitaService {
      */
     @Scheduled(cron = "0 */10 * * * *") // cada 10 minutos
     public void cerrarCitasPasadas() {
-        List<Cita> citasPasadas = citaRepository.findByFechaHoraBefore(LocalDateTime.now());
+
+        List<Cita> citasPasadas =
+                citaRepository.findByFechaHoraBeforeAndEstadoIn(
+                        LocalDateTime.now(),
+                        List.of(EstadoCita.CONFIRMADA, EstadoCita.DISPONIBLE)
+                );
 
         for (Cita c : citasPasadas) {
-            if (c.getEstado() == EstadoCita.CONFIRMADA) c.setEstado(EstadoCita.REALIZADA);
-            else if (c.getEstado() == EstadoCita.DISPONIBLE) c.setEstado(EstadoCita.CADUCADA);
+            if (c.getEstado() == EstadoCita.CONFIRMADA) {
+                c.setEstado(EstadoCita.REALIZADA);
+            } else {
+                c.setEstado(EstadoCita.CADUCADA);
+            }
         }
 
         citaRepository.saveAll(citasPasadas);
