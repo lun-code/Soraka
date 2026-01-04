@@ -18,7 +18,7 @@ import java.util.List;
  * restringidas a usuarios con los roles adecuados (ej. ADMIN).
  */
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 public class UsuarioController {
 
     @Autowired
