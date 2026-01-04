@@ -5,8 +5,6 @@ import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.service.CitaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -14,151 +12,134 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controlador REST para la gestión de citas médicas.
+ * Controlador REST que gestiona las operaciones sobre citas médicas.
+ *
  * <p>
- * Este controlador expone los endpoints HTTP relacionados con las citas y
- * delega toda la lógica de negocio en {@link CitaService}.
+ * La seguridad se aplica mediante {@link PreAuthorize} para validar roles:
+ * <ul>
+ *     <li>PACIENTE: solo puede acceder a sus propias citas</li>
+ *     <li>MEDICO / ADMIN: acceso amplio</li>
+ * </ul>
+ *
  * <p>
- * La autorización de acceso se gestiona principalmente en la capa de servicio
- * mediante anotaciones {@link PreAuthorize}.
+ * La validación de propiedad del recurso se delega al {@link CitaService}.
  */
 @RestController
-@RequestMapping("/citas")
+@RequestMapping("/api/citas")
 public class CitaController {
 
     @Autowired
     private CitaService citaService;
 
     /**
-     * Obtiene el listado de citas asociadas al usuario autenticado.
-     * <p>
-     * El comportamiento depende del rol del usuario:
-     * <ul>
-     *     <li>PACIENTE: obtiene únicamente sus propias citas.</li>
-     *     <li>MEDICO o ADMIN: la autorización y el alcance se validan en el service.</li>
-     * </ul>
+     * Obtiene todas las citas del paciente autenticado.
      *
-     * @param authentication contexto de seguridad que contiene el usuario autenticado.
-     * @return lista de {@link CitaResponseDTO} correspondientes al usuario.
+     * @param authentication contexto de seguridad con el usuario autenticado
+     * @return lista de {@link CitaResponseDTO} del paciente
      */
-    @GetMapping
+    @GetMapping("/mis-citas")
+    @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
     public List<CitaResponseDTO> getCitasPorPaciente(Authentication authentication) {
         Usuario usuario = (Usuario) authentication.getPrincipal();
         return citaService.getCitasPorPaciente(usuario.getId());
     }
 
     /**
-     * Obtiene el detalle de una cita concreta por su identificador.
+     * Obtiene el detalle de una cita concreta por su ID.
      *
-     * @param id identificador de la cita.
-     * @return {@link CitaResponseDTO} con la información de la cita.
+     * @param id identificador de la cita
+     * @param authentication contexto de seguridad con el usuario autenticado
+     * @return {@link CitaResponseDTO} de la cita
      */
     @GetMapping("/{id}")
-    public CitaResponseDTO getCitaById(@PathVariable Long id) {
-        return citaService.getCitaById(id);
-    }
-
-    /**
-     * Lista todas las citas disponibles a partir de la fecha actual.
-     *
-     * @return lista de {@link CitaResponseDTO} disponibles.
-     */
-    @GetMapping("/disponibles")
     @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
-    public List<CitaResponseDTO> listarCitasDisponibles() {
-        return citaService.listarDisponibles();
-    }
-
-    /**
-     * Obtiene todas las citas del sistema.
-     * <p>
-     * Solo accesible por médicos o administradores.
-     *
-     * @return lista de {@link CitaResponseDTO} de todas las citas.
-     */
-    @GetMapping("/todas")
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN')")
-    public List<CitaResponseDTO> getTodasLasCitas() {
-        return citaService.getTodasLasCitas();
+    public CitaResponseDTO getCitaById(@PathVariable Long id, Authentication authentication) {
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        return citaService.getCitaById(id, usuario);
     }
 
     /**
      * Crea una nueva cita médica.
      *
-     * @param cita DTO con los datos necesarios para crear la cita.
-     * @return {@link CitaResponseDTO} de la cita creada.
+     * @param cita DTO con los datos de la cita
+     * @param authentication contexto de seguridad con el usuario autenticado
+     * @return {@link CitaResponseDTO} de la cita creada
      */
     @PostMapping
-    public CitaResponseDTO createCita(@Valid @RequestBody CitaPostDTO cita) {
-        return citaService.createCita(cita);
-    }
-
-    /**
-     * Genera automáticamente citas disponibles para los médicos del sistema.
-     * <p>
-     * Este endpoint está pensado para uso administrativo o de mantenimiento.
-     *
-     * @return respuesta HTTP 201 (CREATED) sin cuerpo.
-     */
-    @PostMapping("/disponibles")
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('MEDICO')")
-    public ResponseEntity<Void> generarCitasDisponibles() {
-        citaService.generarCitasDisponibles();
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    /**
-     * Reserva una cita disponible para el paciente autenticado.
-     *
-     * @param id identificador de la cita a reservar.
-     * @param motivo DTO con el motivo de la cita.
-     * @param auth contexto de autenticación con el paciente autenticado.
-     * @return respuesta HTTP 200 (OK) si la reserva se completa correctamente.
-     */
-    @PostMapping("/{id}/reservar")
-    @PreAuthorize("hasAuthority('PACIENTE')")
-    public ResponseEntity<Void> reservarCita(@PathVariable Long id, @RequestBody @Valid ReservarCitaDTO motivo, Authentication auth) {
-        Usuario paciente = (Usuario) auth.getPrincipal();
-        citaService.reservarCita(id, paciente, motivo);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * Cancela una cita confirmada del paciente autenticado.
-     *
-     * @param id identificador de la cita a cancelar.
-     * @param auth contexto de autenticación con el paciente autenticado.
-     * @return respuesta HTTP 200 (OK) si la cancelación se realiza correctamente.
-     */
-    @PostMapping("/{id}/cancelar")
-    @PreAuthorize("hasAuthority('PACIENTE')")
-    public ResponseEntity<Void> cancelarCita(@PathVariable Long id, Authentication auth) {
-        Usuario paciente = (Usuario) auth.getPrincipal();
-        citaService.cancelarCita(id, paciente);
-        return ResponseEntity.ok().build(); // 200 Ok
-    }
-
-    /**
-     * Elimina una cita existente por su identificador.
-     *
-     * @param id identificador de la cita a eliminar.
-     */
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN') or @citaService.perteneceAlPaciente(#id, principal.id)")
-    public ResponseEntity<Void> deleteCitaById(@PathVariable Long id) {
-        citaService.deleteCita(id);
-        return ResponseEntity.noContent().build(); // 204 No Content
+    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN') or hasAuthority('PACIENTE')")
+    public CitaResponseDTO createCita(@RequestBody @Valid CitaPostDTO cita, Authentication authentication) {
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        return citaService.createCita(cita); // Service valida propiedad si paciente
     }
 
     /**
      * Modifica parcialmente una cita existente.
      *
-     * @param id   identificador de la cita a modificar.
-     * @param cita DTO con los campos a actualizar.
-     * @return {@link CitaResponseDTO} con la información actualizada de la cita.
+     * @param id identificador de la cita
+     * @param cita DTO con campos a actualizar
+     * @param authentication contexto de seguridad con el usuario autenticado
+     * @return {@link CitaResponseDTO} actualizado
      */
     @PatchMapping("/{id}")
-    public CitaResponseDTO patchCita(@PathVariable Long id, @Valid @RequestBody CitaPatchDTO cita) {
-        return citaService.patchCita(id, cita);
+    @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
+    public CitaResponseDTO patchCita(@PathVariable Long id,
+                                     @RequestBody CitaPatchDTO cita,
+                                     Authentication authentication) {
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        return citaService.patchCita(id, cita, usuario);
+    }
+
+    /**
+     * Elimina una cita existente.
+     *
+     * @param id identificador de la cita
+     * @param authentication contexto de seguridad con el usuario autenticado
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
+    public void deleteCita(@PathVariable Long id, Authentication authentication) {
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        citaService.deleteCita(id, usuario);
+    }
+
+    /**
+     * Lista todas las citas DISPONIBLES a partir de la fecha actual.
+     *
+     * @param authentication contexto de seguridad con el usuario autenticado
+     * @return lista de {@link CitaResponseDTO} disponibles
+     */
+    @GetMapping("/disponibles")
+    @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
+    public List<CitaResponseDTO> listarDisponibles(Authentication authentication) {
+        return citaService.listarDisponibles();
+    }
+
+    /**
+     * Reserva una cita DISPONIBLE para el paciente autenticado.
+     *
+     * @param citaId identificador de la cita a reservar
+     * @param dto contiene el motivo de la cita
+     * @param authentication contexto de seguridad con el usuario autenticado
+     */
+    @PostMapping("/{id}/reservar")
+    @PreAuthorize("hasAuthority('PACIENTE')")
+    public void reservarCita(@PathVariable("id") Long citaId,
+                             @RequestBody @Valid ReservarCitaDTO dto,
+                             Authentication authentication) {
+        Usuario paciente = (Usuario) authentication.getPrincipal();
+        citaService.reservarCita(citaId, paciente, dto);
+    }
+
+    /**
+     * Cancela una cita confirmada del paciente autenticado.
+     *
+     * @param citaId identificador de la cita a cancelar
+     * @param authentication contexto de seguridad con el usuario autenticado
+     */
+    @PostMapping("/{id}/cancelar")
+    @PreAuthorize("hasAuthority('PACIENTE')")
+    public void cancelarCita(@PathVariable("id") Long citaId, Authentication authentication) {
+        Usuario paciente = (Usuario) authentication.getPrincipal();
+        citaService.cancelarCita(citaId, paciente);
     }
 }

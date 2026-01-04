@@ -13,11 +13,18 @@ import com.hospital.Soraka.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Servicio de dominio para la gestión de médicos.
+ *
+ * <p>
+ * Contiene operaciones de listado, consulta, creación, actualización parcial y eliminación.
+ * La seguridad basada en roles debe aplicarse en el controller mediante {@code @PreAuthorize}.
+ * Este service valida únicamente la existencia de entidades y reglas de negocio.
+ */
 @Service
 @Transactional
 public class MedicoService {
@@ -32,9 +39,9 @@ public class MedicoService {
     private EspecialidadRepository especialidadRepository;
 
     /**
-     * Obtiene el listado completo de medicos.
+     * Obtiene todos los médicos registrados en el sistema.
      *
-     * @return lista de medicos transformados a {@link MedicoResponseDTO}
+     * @return lista de {@link MedicoResponseDTO} con la información de cada médico.
      */
     public List<MedicoResponseDTO> getMedicos() {
         return medicoRepository.findAll()
@@ -44,11 +51,11 @@ public class MedicoService {
     }
 
     /**
-     * Obtiene un medico a partir de su identificador.
+     * Obtiene un médico a partir de su ID.
      *
-     * @param id identificador del medico
-     * @return datos del medico en forma de {@link MedicoResponseDTO}
-     * @throws EntityNotFoundException si no existe un medico con el ID indicado
+     * @param id identificador del médico
+     * @return {@link MedicoResponseDTO} con los datos del médico
+     * @throws EntityNotFoundException si no existe un médico con el ID indicado
      */
     public MedicoResponseDTO getMedicoById(Long id){
         Medico medico = medicoRepository.findById(id)
@@ -58,14 +65,16 @@ public class MedicoService {
     }
 
     /**
-     * Crea un nuevo medico en el sistema.
+     * Crea un nuevo médico en el sistema.
      *
-     * @param medico datos necesarios para la creacion del medico
-     * @return medico creado en forma de {@link MedicoResponseDTO}
+     * <p>
+     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
+     *
+     * @param medico DTO con los datos necesarios para la creación del médico.
+     * @return {@link MedicoResponseDTO} con el médico creado.
      * @throws EntityNotFoundException si el usuario o la especialidad no existen
-     * @throws IllegalArgumentException si el usuario no tiene rol MEDICO o ya esta asignado a otro medico
+     * @throws IllegalArgumentException si el usuario no tiene rol MEDICO o ya está asignado a otro médico
      */
-    @PreAuthorize("hasAuthority('ADMIN')")
     public MedicoResponseDTO createMedico(MedicoPostDTO medico) {
         Usuario usuario = usuarioRepository.findById(medico.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
@@ -74,11 +83,11 @@ public class MedicoService {
                 .orElseThrow(() -> new EntityNotFoundException("Especialidad no encontrada"));
 
         if (usuario.getRol() != Rol.MEDICO) {
-            throw new IllegalArgumentException("El usuario debe tener rol MEDICO para ser asignado como medico");
+            throw new IllegalArgumentException("El usuario debe tener rol MEDICO para ser asignado como médico");
         }
 
         if (medicoRepository.existsByUsuario(usuario)) {
-            throw new IllegalArgumentException("El usuario ya esta asignado a un medico");
+            throw new IllegalArgumentException("El usuario ya está asignado a un médico");
         }
 
         Medico nuevoMedico = new Medico(usuario, especialidad);
@@ -87,29 +96,33 @@ public class MedicoService {
     }
 
     /**
-     * Elimina un medico del sistema a partir de su ID.
+     * Elimina un médico del sistema a partir de su ID.
      *
-     * @param id identificador del medico a eliminar
-     * @throws EntityNotFoundException si el medico no existe
+     * <p>
+     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
+     *
+     * @param id identificador del médico a eliminar
+     * @throws EntityNotFoundException si el médico no existe
      */
-    @PreAuthorize("hasAuthority('ADMIN')")
     public void deleteMedico(Long id){
         if(!medicoRepository.existsById(id)){
-            throw new EntityNotFoundException("El medico no existe");
+            throw new EntityNotFoundException("El médico no existe");
         }
         medicoRepository.deleteById(id);
     }
 
     /**
-     * Actualiza parcialmente un medico existente.
+     * Actualiza parcialmente un médico existente.
      *
-     * @param id identificador del medico a modificar
-     * @param medicoDTO datos parciales a actualizar
-     * @return medico actualizado en forma de {@link MedicoResponseDTO}
-     * @throws EntityNotFoundException si el medico, usuario o especialidad no existen
-     * @throws IllegalArgumentException si el usuario no tiene rol MEDICO o ya esta asignado a otro medico
+     * <p>
+     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
+     *
+     * @param id identificador del médico a modificar
+     * @param medicoDTO DTO con los campos parciales a actualizar
+     * @return {@link MedicoResponseDTO} con el médico actualizado
+     * @throws EntityNotFoundException si el médico, usuario o especialidad no existen
+     * @throws IllegalArgumentException si el usuario no tiene rol MEDICO o ya está asignado a otro médico
      */
-    @PreAuthorize("hasAuthority('ADMIN')")
     public MedicoResponseDTO patchMedico(Long id, MedicoPatchDTO medicoDTO){
         Medico existente = medicoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
@@ -125,12 +138,12 @@ public class MedicoService {
                     .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
             if (usuario.getRol() != Rol.MEDICO) {
-                throw new IllegalArgumentException("El usuario debe tener rol MEDICO para ser asignado como medico");
+                throw new IllegalArgumentException("El usuario debe tener rol MEDICO para ser asignado como médico");
             }
 
             if (medicoRepository.existsByUsuario(usuario)
                     && !usuario.getId().equals(existente.getUsuario().getId())) {
-                throw new IllegalArgumentException("El usuario ya esta asignado a otro medico");
+                throw new IllegalArgumentException("El usuario ya está asignado a otro médico");
             }
 
             existente.setUsuario(usuario);
@@ -141,10 +154,10 @@ public class MedicoService {
     }
 
     /**
-     * Construye el DTO de respuesta a partir de una entidad {@link Medico}.
+     * Construye un DTO de respuesta a partir de la entidad {@link Medico}.
      *
-     * @param m entidad medico
-     * @return DTO con los datos del medico, usuario y especialidad
+     * @param m entidad médico
+     * @return {@link MedicoResponseDTO} con los datos del médico, usuario y especialidad
      */
     private MedicoResponseDTO buildResponse(Medico m) {
         return new MedicoResponseDTO(

@@ -5,40 +5,34 @@ import com.hospital.Soraka.entity.Cita;
 import com.hospital.Soraka.entity.Medico;
 import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.enums.EstadoCita;
+import com.hospital.Soraka.enums.Rol;
 import com.hospital.Soraka.repository.CitaRepository;
 import com.hospital.Soraka.repository.MedicoRepository;
 import com.hospital.Soraka.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * Servicio de dominio encargado de la gestión de citas médicas.
+ *
  * <p>
  * Contiene la lógica de negocio relacionada con:
  * <ul>
  *     <li>Creación, consulta, modificación y eliminación de citas</li>
  *     <li>Validación de disponibilidad de médicos</li>
- *     <li>Control de acceso basado en roles y propiedad del recurso</li>
+ *     <li>Control de acceso basado en propiedad del recurso</li>
  * </ul>
  *
  * <p>
- * La seguridad se aplica a nivel de método mediante {@link PreAuthorize},
- * permitiendo:
- * <ul>
- *     <li>Médicos y administradores: acceso amplio</li>
- *     <li>Pacientes: acceso únicamente a sus propias citas</li>
- * </ul>
- *
- * <p>
- * Todas las operaciones se ejecutan dentro de una transacción.
+ * La seguridad basada en roles debe aplicarse en el controlador mediante {@code @PreAuthorize}.
+ * El service valida únicamente la propiedad y reglas de negocio.
  */
 @Service
 @Transactional
@@ -58,7 +52,7 @@ public class CitaService {
      *
      * @param citaId identificador de la cita
      * @param pacienteId identificador del paciente
-     * @return {@code true} si la cita pertenece al paciente, {@code false} en caso contrario
+     * @return {@code true} si la cita pertenece al paciente
      * @throws EntityNotFoundException si la cita no existe
      */
     public boolean perteneceAlPaciente(Long citaId, Long pacienteId) {
@@ -73,7 +67,6 @@ public class CitaService {
      * @param pacienteId identificador del paciente
      * @return lista de {@link CitaResponseDTO} del paciente
      */
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN') or #pacienteId == principal.id")
     public List<CitaResponseDTO> getCitasPorPaciente(Long pacienteId) {
         return citaRepository.findByPacienteId(pacienteId)
                 .stream()
@@ -83,12 +76,9 @@ public class CitaService {
 
     /**
      * Obtiene todas las citas del sistema.
-     * <p>
-     * Solo accesible por médicos o administradores.
      *
      * @return lista de {@link CitaResponseDTO} de todas las citas
      */
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN')")
     public List<CitaResponseDTO> getTodasLasCitas() {
         return citaRepository.findAll()
                 .stream()
@@ -97,27 +87,35 @@ public class CitaService {
     }
 
     /**
-     * Obtiene una cita por su ID.
+     * Obtiene una cita por su ID validando que el usuario tenga permiso.
+     *
+     * <p>
+     * Los pacientes solo pueden acceder a sus propias citas.
+     * Médicos y administradores pueden acceder a cualquier cita.
      *
      * @param id identificador de la cita
+     * @param usuario usuario que realiza la consulta
      * @return {@link CitaResponseDTO} de la cita
      * @throws EntityNotFoundException si la cita no existe
+     * @throws AccessDeniedException si el usuario no tiene permiso
      */
-    @PreAuthorize("hasAuthority('MEDICO') or @citaService.perteneceAlPaciente(#id, principal.id)")
-    public CitaResponseDTO getCitaById(Long id) {
-        Cita existente = citaRepository.findById(id)
+    public CitaResponseDTO getCitaById(Long id, Usuario usuario) {
+        Cita cita = citaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
-        return buildResponse(existente);
+
+        if (usuario.getRol() == Rol.PACIENTE &&
+                !cita.getPaciente().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No puedes acceder a esta cita");
+        }
+
+        return buildResponse(cita);
     }
 
     /**
-     * Lista todas las citas disponibles a partir de la fecha actual.
-     * <p>
-     * Se puede acceder por pacientes, médicos y administradores.
+     * Lista todas las citas DISPONIBLES a partir de la fecha y hora actual.
      *
      * @return lista de {@link CitaResponseDTO} disponibles
      */
-    @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
     public List<CitaResponseDTO> listarDisponibles() {
         return citaRepository.findByEstadoAndFechaHoraAfter(
                 EstadoCita.DISPONIBLE,
@@ -128,12 +126,14 @@ public class CitaService {
     /**
      * Crea una nueva cita médica.
      *
+     * <p>
+     * Valida existencia de paciente y médico, y que el médico no tenga otra cita en ese horario.
+     *
      * @param cita DTO con los datos de la cita
      * @return {@link CitaResponseDTO} de la cita creada
      * @throws EntityNotFoundException si paciente o médico no existen
      * @throws IllegalArgumentException si el médico ya tiene otra cita en ese horario
      */
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN') or #cita.pacienteId == principal.id")
     public CitaResponseDTO createCita(CitaPostDTO cita) {
         Usuario paciente = usuarioRepository.findById(cita.getPacienteId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
@@ -150,80 +150,58 @@ public class CitaService {
     }
 
     /**
-     * Elimina una cita existente.
+     * Elimina una cita existente validando propiedad del usuario.
      *
      * @param id identificador de la cita
+     * @param usuario usuario que solicita la eliminación
      * @throws EntityNotFoundException si la cita no existe
+     * @throws AccessDeniedException si el usuario no tiene permiso
      */
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN') or @citaService.perteneceAlPaciente(#id, principal.id)")
-    public void deleteCita(Long id) {
-        if (!citaRepository.existsById(id)) {
-            throw new EntityNotFoundException("Cita no encontrada");
+    public void deleteCita(Long id, Usuario usuario) {
+        Cita cita = citaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
+
+        if (usuario.getRol() == Rol.PACIENTE &&
+                !cita.getPaciente().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No puedes eliminar esta cita");
         }
-        citaRepository.deleteById(id);
+
+        citaRepository.delete(cita);
     }
 
     /**
-     * Modifica parcialmente una cita existente.
+     * Modifica parcialmente una cita existente validando propiedad del usuario.
      *
      * @param id identificador de la cita
-     * @param cita DTO con campos a actualizar
-     * @return {@link CitaResponseDTO} con información actualizada
+     * @param citaPatch DTO con los campos a actualizar
+     * @param usuario usuario que solicita la modificación
+     * @return {@link CitaResponseDTO} actualizado
      * @throws EntityNotFoundException si la cita no existe
-     * @throws IllegalArgumentException si el médico ya tiene otra cita en ese horario
+     * @throws AccessDeniedException si el usuario no tiene permiso
+     * @throws IllegalArgumentException si el médico ya tiene otra cita en el horario indicado
      */
-    @PreAuthorize("hasAuthority('MEDICO') or @citaService.perteneceAlPaciente(#id, principal.id)")
-    public CitaResponseDTO patchCita(Long id, CitaPatchDTO cita) {
+    public CitaResponseDTO patchCita(Long id, CitaPatchDTO citaPatch, Usuario usuario) {
         Cita existente = citaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
 
-        if (cita.getFechaHora() != null) {
-            citaRepository.findByMedicoAndFechaHora(existente.getMedico(), cita.getFechaHora())
+        if (usuario.getRol() == Rol.PACIENTE &&
+                !existente.getPaciente().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No puedes modificar esta cita");
+        }
+
+        if (citaPatch.getFechaHora() != null) {
+            citaRepository.findByMedicoAndFechaHora(existente.getMedico(), citaPatch.getFechaHora())
                     .filter(c -> !c.getId().equals(existente.getId()))
                     .ifPresent(c -> {
                         throw new IllegalArgumentException("El médico ya tiene otra cita en esa fecha y hora.");
                     });
-            existente.setFechaHora(cita.getFechaHora());
+            existente.setFechaHora(citaPatch.getFechaHora());
         }
 
-        if (cita.getEstado() != null) existente.setEstado(cita.getEstado());
-        if (cita.getMotivo() != null) existente.setMotivo(cita.getMotivo());
+        if (citaPatch.getEstado() != null) existente.setEstado(citaPatch.getEstado());
+        if (citaPatch.getMotivo() != null) existente.setMotivo(citaPatch.getMotivo());
 
         return buildResponse(citaRepository.save(existente));
-    }
-
-    /**
-     * Genera automáticamente citas DISPONIBLES para los médicos.
-     * Cada cita se crea con paciente = null y estado = DISPONIBLE.
-     */
-    @Scheduled(cron = "0 0 0 * * *") // Todos los días a medianoche
-    public void generarCitasDisponibles() {
-        List<Medico> medicos = medicoRepository.findAll();
-        LocalDate hoy = LocalDate.now();
-        LocalDateTime ahora = LocalDateTime.now();
-
-        for (Medico medico : medicos) {
-            LocalDate fecha = hoy.plusDays(1);
-            LocalDate fechaFin = hoy.plusDays(7);
-
-            while (!fecha.isAfter(fechaFin)) {
-                LocalDateTime hora = fecha.atTime(8, 0);
-                LocalDateTime fin = fecha.atTime(15, 0);
-
-                while (hora.isBefore(fin)) {
-                    if (hora.isAfter(ahora) && !citaRepository.existsByMedicoAndFechaHora(medico, hora)) {
-
-                        Cita cita = new Cita();
-                        cita.setMedico(medico);
-                        cita.setFechaHora(hora);
-                        cita.setEstado(EstadoCita.DISPONIBLE);
-                        citaRepository.save(cita);
-                    }
-                    hora = hora.plusMinutes(30);
-                }
-                fecha = fecha.plusDays(1);
-            }
-        }
     }
 
     /**
@@ -235,7 +213,6 @@ public class CitaService {
      * @throws EntityNotFoundException si la cita no existe
      * @throws IllegalStateException si la cita no está disponible
      */
-    @PreAuthorize("hasAuthority('PACIENTE')")
     public void reservarCita(Long citaId, Usuario paciente, ReservarCitaDTO dto) {
         Cita cita = citaRepository.findById(citaId)
                 .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
@@ -252,15 +229,14 @@ public class CitaService {
     }
 
     /**
-     * Cancela una cita confirmada para un paciente.
+     * Cancela una cita confirmada de un paciente.
      *
      * @param citaId identificador de la cita a cancelar
      * @param paciente paciente que solicita la cancelación
      * @throws EntityNotFoundException si la cita no existe
      * @throws IllegalStateException si la cita no está confirmada
-     * @throws SecurityException si el paciente no es propietario de la cita
+     * @throws AccessDeniedException si el paciente no es propietario
      */
-    @PreAuthorize("hasAuthority('PACIENTE')")
     public void cancelarCita(Long citaId, Usuario paciente) {
         Cita cita = citaRepository.findById(citaId)
                 .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
@@ -270,7 +246,7 @@ public class CitaService {
         }
 
         if (!cita.getPaciente().getId().equals(paciente.getId())) {
-            throw new SecurityException("No puedes cancelar esta cita");
+            throw new AccessDeniedException("No puedes cancelar esta cita");
         }
 
         cita.setPaciente(null);
@@ -286,7 +262,6 @@ public class CitaService {
      */
     @Scheduled(cron = "0 */10 * * * *") // cada 10 minutos
     public void cerrarCitasPasadas() {
-
         List<Cita> citasPasadas =
                 citaRepository.findByFechaHoraBeforeAndEstadoIn(
                         LocalDateTime.now(),

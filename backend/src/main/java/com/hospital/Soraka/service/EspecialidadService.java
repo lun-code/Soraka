@@ -8,17 +8,17 @@ import com.hospital.Soraka.repository.EspecialidadRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
  * Servicio para la gestión de especialidades médicas.
+ *
  * <p>
- * Incluye operaciones de listado, consulta por ID, creación, actualización parcial y eliminación.
- * El control fino de acceso se aplica usando anotaciones @PreAuthorize, de forma que solo
- * usuarios con los roles adecuados puedan modificar o eliminar especialidades.
+ * Contiene operaciones de listado, consulta por ID, creación, actualización parcial y eliminación.
+ * La seguridad basada en roles debe aplicarse en el controller mediante {@code @PreAuthorize}.
+ * Este service valida únicamente la existencia de entidades y reglas de negocio.
  */
 @Service
 @Transactional
@@ -29,9 +29,8 @@ public class EspecialidadService {
 
     /**
      * Obtiene la lista completa de especialidades.
-     * Accesible para cualquier usuario autenticado.
      *
-     * @return Lista de EspecialidadResponseDTO con información de cada especialidad.
+     * @return Lista de {@link EspecialidadResponseDTO} con información de cada especialidad.
      */
     public List<EspecialidadResponseDTO> getEspecialidades() {
         return especialidadRepository.findAll()
@@ -42,10 +41,9 @@ public class EspecialidadService {
 
     /**
      * Obtiene una especialidad por su ID.
-     * Accesible para cualquier usuario autenticado.
      *
      * @param id Id de la especialidad.
-     * @return EspecialidadResponseDTO con información de la especialidad.
+     * @return {@link EspecialidadResponseDTO} con información de la especialidad.
      * @throws EntityNotFoundException si la especialidad no existe.
      */
     public EspecialidadResponseDTO getEspecialidadById(Long id) {
@@ -55,14 +53,15 @@ public class EspecialidadService {
     }
 
     /**
-     * Crea una nueva especialidad.
-     * Accesible solo para administradores.
+     * Crea una nueva especialidad médica.
+     *
+     * <p>
+     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
      *
      * @param especialidad DTO con los datos de la especialidad a crear.
-     * @return EspecialidadResponseDTO con la especialidad creada.
+     * @return {@link EspecialidadResponseDTO} con la especialidad creada.
      * @throws IllegalArgumentException si ya existe una especialidad con el mismo nombre.
      */
-    @PreAuthorize("hasAuthority('ADMIN')")
     public EspecialidadResponseDTO createEspecialidad(EspecialidadPostDTO especialidad) {
 
         if (especialidadRepository.existsByNombre(especialidad.getNombre())) {
@@ -76,13 +75,14 @@ public class EspecialidadService {
     }
 
     /**
-     * Elimina una especialidad existente.
-     * Accesible solo para administradores.
+     * Elimina una especialidad existente por su ID.
+     *
+     * <p>
+     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
      *
      * @param id ID de la especialidad a eliminar.
      * @throws EntityNotFoundException si la especialidad no existe.
      */
-    @PreAuthorize("hasAuthority('ADMIN')")
     public void deleteEspecialidad(Long id) {
 
         if (!especialidadRepository.existsById(id)) {
@@ -93,15 +93,16 @@ public class EspecialidadService {
 
     /**
      * Actualiza parcialmente una especialidad existente.
-     * Accesible solo para administradores.
+     *
+     * <p>
+     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
      *
      * @param id ID de la especialidad a actualizar.
      * @param especialidad DTO con los campos a modificar.
-     * @return EspecialidadResponseDTO con la especialidad actualizada.
+     * @return {@link EspecialidadResponseDTO} con la especialidad actualizada.
      * @throws EntityNotFoundException si la especialidad no existe.
      * @throws IllegalArgumentException si el nombre es inválido o ya existe otra especialidad con el mismo nombre.
      */
-    @PreAuthorize("hasAuthority('ADMIN')")
     public EspecialidadResponseDTO patchEspecialidad(Long id, EspecialidadPatchDTO especialidad) {
 
         Especialidad existente = especialidadRepository.findById(id)
@@ -127,10 +128,10 @@ public class EspecialidadService {
     }
 
     /**
-     * Construye un DTO de respuesta a partir de la entidad Especialidad.
+     * Construye un DTO de respuesta a partir de la entidad {@link Especialidad}.
      *
      * @param e Entidad Especialidad.
-     * @return EspecialidadResponseDTO con la información relevante.
+     * @return {@link EspecialidadResponseDTO} con la información relevante.
      */
     private EspecialidadResponseDTO buildResponse(Especialidad e) {
         return new EspecialidadResponseDTO(e.getId(), e.getNombre());

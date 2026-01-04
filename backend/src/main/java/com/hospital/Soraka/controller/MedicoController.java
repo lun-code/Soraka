@@ -7,79 +7,97 @@ import com.hospital.Soraka.service.MedicoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * Controlador para la gestión de médicos en el hospital.
+ * Controlador REST para la gestión de médicos en el hospital.
+ *
  * <p>
  * Permite listar médicos, consultar uno específico, crear, actualizar y eliminar.
- * La mayoría de los endpoints de modificación deben ser accesibles solo por administradores.
+ * Los endpoints de modificación (POST, PATCH, DELETE) están protegidos para administradores.
  */
 @RestController
+@RequestMapping("/api/medicos")
 public class MedicoController {
 
     @Autowired
     private MedicoService medicoService;
 
     /**
-     * Obtiene la lista de todos los médicos.
-     * Accesible para cualquier usuario autenticado.
+     * Obtiene la lista completa de médicos registrados.
      *
-     * @return Lista de MedicoResponseDTO con información de cada médico.
+     * <p>
+     * Este endpoint es accesible para cualquier usuario autenticado.
+     *
+     * @return Lista de {@link MedicoResponseDTO} con la información de cada médico.
      */
-    @GetMapping("/medicos")
-    public List<MedicoResponseDTO> getMedicos(){
+    @GetMapping
+    public List<MedicoResponseDTO> getMedicos() {
         return medicoService.getMedicos();
     }
 
     /**
      * Obtiene un médico por su ID.
-     * Accesible para cualquier usuario autenticado.
      *
-     * @param id Id del médico.
-     * @return MedicoResponseDTO con información del médico.
+     * <p>
+     * Este endpoint es accesible para cualquier usuario autenticado.
+     *
+     * @param id Identificador del médico.
+     * @return {@link MedicoResponseDTO} con los datos del médico.
      */
-    @GetMapping("/medicos/{id}")
-    public MedicoResponseDTO getMedicoById(@PathVariable Long id){
+    @GetMapping("/{id}")
+    public MedicoResponseDTO getMedicoById(@PathVariable Long id) {
         return medicoService.getMedicoById(id);
     }
 
     /**
      * Crea un nuevo médico.
-     * Accesible solo para administradores.
+     *
+     * <p>
+     * Solo accesible para administradores.
      *
      * @param medico DTO con los datos del médico a crear.
-     * @return MedicoResponseDTO con los datos del médico creado.
+     * @return {@link MedicoResponseDTO} con los datos del médico creado.
      */
-    @PostMapping("/medicos")
-    public MedicoResponseDTO createMedico(@Valid @RequestBody MedicoPostDTO medico){
+    @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public MedicoResponseDTO createMedico(@Valid @RequestBody MedicoPostDTO medico) {
         return medicoService.createMedico(medico);
     }
 
     /**
-     * Elimina un médico existente.
-     * Accesible solo para administradores.
+     * Elimina un médico existente por su ID.
      *
-     * @param id Id del médico a eliminar.
+     * <p>
+     * Solo accesible para administradores.
+     *
+     * @param id Identificador del médico a eliminar.
+     * @return {@link ResponseEntity} con estado 204 No Content si se elimina correctamente.
      */
-    @DeleteMapping("/medicos/{id}")
-    public ResponseEntity<Void> deleteMedico(@PathVariable Long id){
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> deleteMedico(@PathVariable Long id) {
         medicoService.deleteMedico(id);
-        return ResponseEntity.noContent().build(); // 204 No Content
+        return ResponseEntity.noContent().build();
     }
 
     /**
      * Actualiza parcialmente un médico existente.
-     * Accesible solo para administradores.
      *
-     * @param medico DTO con los campos a actualizar.
-     * @param id ID del médico a modificar.
-     * @return MedicoResponseDTO con los datos actualizados del médico.
+     * <p>
+     * Solo accesible para administradores.
+     *
+     * @param id Identificador del médico a modificar.
+     * @param medico DTO con los campos parciales a actualizar.
+     * @return {@link MedicoResponseDTO} con los datos actualizados del médico.
      */
-    @PatchMapping("/medicos/{id}")
-    public MedicoResponseDTO patchMedico(@Valid @RequestBody MedicoPatchDTO medico, @PathVariable Long id){
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public MedicoResponseDTO patchMedico(@PathVariable Long id,
+                                         @Valid @RequestBody MedicoPatchDTO medico) {
         return medicoService.patchMedico(id, medico);
     }
 }
