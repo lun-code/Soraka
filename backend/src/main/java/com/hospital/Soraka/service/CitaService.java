@@ -5,6 +5,7 @@ import com.hospital.Soraka.entity.Cita;
 import com.hospital.Soraka.entity.Medico;
 import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.enums.EstadoCita;
+import com.hospital.Soraka.enums.Rol;
 import com.hospital.Soraka.exception.Cita.CitaNoCancelableException;
 import com.hospital.Soraka.exception.Cita.CitaNoDisponibleException;
 import com.hospital.Soraka.exception.Cita.CitaNotFoundException;
@@ -20,6 +21,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -140,29 +142,56 @@ public class CitaService {
     /**
      * Modifica parcialmente una cita existente.
      * <p>
-     * No permite modificar el estado directamente.
+     * Permite actualizar la fecha/hora, el médico y el motivo de la cita.
+     * La modificación de la fecha/hora valida que:
+     * <ul>
+     *   <li>No se pueda mover la cita al pasado</li>
+     *   <li>El médico (actual o nuevo) no tenga otra cita en la misma fecha/hora</li>
+     * </ul>
+     * La modificación del médico valida que el nuevo médico exista y que no tenga conflictos.
+     * No permite modificar el estado de la cita directamente.
      *
-     * @param id id de la cita
-     * @param dto datos a modificar
-     * @return cita modificada
+     * @param id  id de la cita a modificar
+     * @param dto DTO con los campos a actualizar: fechaHora, medicoId, motivo
+     * @return DTO de respuesta con los datos actualizados de la cita
+     * @throws CitaNotFoundException      si la cita no existe
+     * @throws MedicoNotFoundException    si se intenta asignar un médico que no existe
+     * @throws CitaNoDisponibleException  si se intenta mover la cita al pasado
+     * @throws CitaOcupadaException       si el médico tiene otra cita en la misma fecha/hora
      */
     public CitaResponseDTO patchCita(Long id, CitaPatchDTO dto) {
         Cita cita = citaRepository.findById(id)
                 .orElseThrow(() -> new CitaNotFoundException("Cita no encontrada"));
 
-        if (dto.getFechaHora() != null) {
+        // -----------------------------
+        // Actualizar fecha y/o médico
+        // -----------------------------
+        if (dto.getFechaHora() != null || dto.getMedicoId() != null) {
 
-            if (dto.getFechaHora().isBefore(LocalDateTime.now())) {
+            LocalDateTime nuevaFecha = dto.getFechaHora() != null ? dto.getFechaHora() : cita.getFechaHora();
+            Medico nuevoMedico = cita.getMedico();
+
+            if (dto.getMedicoId() != null && !dto.getMedicoId().equals(cita.getMedico().getId())) {
+                nuevoMedico = medicoRepository.findById(dto.getMedicoId())
+                        .orElseThrow(() -> new MedicoNotFoundException("Medico no encontrado"));
+            }
+
+            if (nuevaFecha.isBefore(LocalDateTime.now())) {
                 throw new CitaNoDisponibleException("No se puede mover la cita al pasado");
             }
 
-            citaRepository.findByMedicoAndFechaHora(cita.getMedico(), dto.getFechaHora())
-                    .filter(c -> !c.getId().equals(cita.getId()))
-                    .ifPresent(c -> {
-                        throw new CitaOcupadaException("El médico ya tiene otra cita en esa fecha y hora");
-                    });
+            // Comprobar conflictos de todas las citas del médico
+            boolean conflicto = citaRepository.findByMedicoAndFechaHora(nuevoMedico, nuevaFecha)
+                    .stream()
+                    .anyMatch(c -> !c.getId().equals(cita.getId()));
 
-            cita.setFechaHora(dto.getFechaHora());
+            if (conflicto) {
+                throw new CitaOcupadaException("El médico ya tiene otra cita en esa fecha y hora");
+            }
+
+            // Actualizamos los valores
+            cita.setFechaHora(nuevaFecha);
+            cita.setMedico(nuevoMedico);
         }
 
         if (dto.getMotivo() != null) {
@@ -232,8 +261,10 @@ public class CitaService {
             throw new CitaNoCancelableException("Solo se pueden cancelar citas confirmadas");
         }
 
-        if (cita.getPaciente() == null ||
-                !cita.getPaciente().getId().equals(paciente.getId())) {
+        if (cita.getPaciente() != null &&
+                !cita.getPaciente().getId().equals(paciente.getId()) &&
+                paciente.getRol() != Rol.MEDICO &&
+                paciente.getRol() != Rol.ADMIN) {
             throw new AccessDeniedException("No puedes cancelar esta cita");
         }
 
@@ -245,8 +276,42 @@ public class CitaService {
     }
 
     /* =========================
-       TAREA PROGRAMADA
+       TAREAS PROGRAMADA
        ========================= */
+
+    /**
+     * Genera automáticamente citas DISPONIBLES para los médicos.
+     * Cada cita se crea con paciente = null y estado = DISPONIBLE.
+     */
+    @Scheduled(cron = "0 0 0 * * *") // Todos los días a medianoche
+    public void generarCitasDisponibles() {
+        List<Medico> medicos = medicoRepository.findAll();
+        LocalDate hoy = LocalDate.now();
+        LocalDateTime ahora = LocalDateTime.now();
+
+        for (Medico medico : medicos) {
+            LocalDate fecha = hoy.plusDays(1);
+            LocalDate fechaFin = hoy.plusDays(7);
+
+            while (!fecha.isAfter(fechaFin)) {
+                LocalDateTime hora = fecha.atTime(8, 0);
+                LocalDateTime fin = fecha.atTime(15, 0);
+
+                while (hora.isBefore(fin)) {
+                    if (hora.isAfter(ahora) && !citaRepository.existsByMedicoAndFechaHora(medico, hora)) {
+
+                        Cita cita = new Cita();
+                        cita.setMedico(medico);
+                        cita.setFechaHora(hora);
+                        cita.setEstado(EstadoCita.DISPONIBLE);
+                        citaRepository.save(cita);
+                    }
+                        hora = hora.plusMinutes(30);
+                }
+                    fecha = fecha.plusDays(1);
+            }
+        }
+    }
 
     /**
      * Cierra automáticamente las citas pasadas.

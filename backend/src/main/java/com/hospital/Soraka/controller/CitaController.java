@@ -5,6 +5,8 @@ import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.service.CitaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -63,6 +65,22 @@ public class CitaController {
             @RequestBody @Valid CitaPostDTO cita
     ) {
         return citaService.createCita(cita);
+    }
+
+    /**
+     * Genera automáticamente citas disponibles para los médicos del sistema.
+     * <p>
+     * Este endpoint está pensado para uso administrativo o de mantenimiento
+     * y normalmente se ejecuta de forma programada mediante tareas {@code @Scheduled}.
+     *
+     * @return respuesta HTTP 201 (CREATED) sin cuerpo.
+     */
+    @PostMapping("/generar")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> generarCitasDisponibles() {
+
+        citaService.generarCitasDisponibles();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     /**
@@ -128,9 +146,9 @@ public class CitaController {
      * @param authentication contexto de seguridad
      */
     @PostMapping("/{id}/cancelar")
-    @PreAuthorize("hasAuthority('PACIENTE')")
+    @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
     public void cancelarCita(@PathVariable Long id, Authentication authentication) {
-        Usuario paciente = (Usuario) authentication.getPrincipal();
-        citaService.cancelarCita(id, paciente);
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        citaService.cancelarCita(id, usuario);
     }
 }

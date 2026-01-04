@@ -15,6 +15,8 @@ public class CitaPatchDTO {
     @Size(max = 255, message = "El motivo no puede superar 255 caracteres")
     private String motivo;
 
+    private Long medicoId;
+
     // GETTERS Y SETTERS
     public LocalDateTime getFechaHora() {
         return fechaHora;
@@ -28,6 +30,10 @@ public class CitaPatchDTO {
         return motivo;
     }
 
+    public Long getMedicoId() {
+        return medicoId;
+    }
+
     public void setFechaHora(LocalDateTime fechaHora) {
         this.fechaHora = fechaHora;
     }
@@ -38,5 +44,9 @@ public class CitaPatchDTO {
 
     public void setMotivo(String motivo) {
         this.motivo = motivo;
+    }
+
+    public void setMedicoId(Long medicoId) {
+        this.medicoId = medicoId;
     }
 }
