@@ -5,11 +5,15 @@ import com.hospital.Soraka.entity.Cita;
 import com.hospital.Soraka.entity.Medico;
 import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.enums.EstadoCita;
-import com.hospital.Soraka.enums.Rol;
+import com.hospital.Soraka.exception.Cita.CitaNoCancelableException;
+import com.hospital.Soraka.exception.Cita.CitaNoDisponibleException;
+import com.hospital.Soraka.exception.Cita.CitaNotFoundException;
+import com.hospital.Soraka.exception.Cita.CitaOcupadaException;
+import com.hospital.Soraka.exception.Medico.MedicoNotFoundException;
+import com.hospital.Soraka.exception.Usuario.UsuarioNotFoundException;
 import com.hospital.Soraka.repository.CitaRepository;
 import com.hospital.Soraka.repository.MedicoRepository;
 import com.hospital.Soraka.repository.UsuarioRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,19 +24,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Servicio de dominio encargado de la gestión de citas médicas.
- *
+ * Servicio de negocio encargado de la gestión de citas médicas.
  * <p>
- * Contiene la lógica de negocio relacionada con:
- * <ul>
- *     <li>Creación, consulta, modificación y eliminación de citas</li>
- *     <li>Validación de disponibilidad de médicos</li>
- *     <li>Control de acceso basado en propiedad del recurso</li>
- * </ul>
- *
- * <p>
- * La seguridad basada en roles debe aplicarse en el controlador mediante {@code @PreAuthorize}.
- * El service valida únicamente la propiedad y reglas de negocio.
+ * Contiene toda la lógica relacionada con la creación, modificación,
+ * reserva, cancelación y cierre automático de citas, así como
+ * las validaciones de permisos y reglas de negocio.
  */
 @Service
 @Transactional
@@ -47,25 +43,15 @@ public class CitaService {
     @Autowired
     private MedicoRepository medicoRepository;
 
-    /**
-     * Comprueba si una cita pertenece a un paciente concreto.
-     *
-     * @param citaId identificador de la cita
-     * @param pacienteId identificador del paciente
-     * @return {@code true} si la cita pertenece al paciente
-     * @throws EntityNotFoundException si la cita no existe
-     */
-    public boolean perteneceAlPaciente(Long citaId, Long pacienteId) {
-        Cita cita = citaRepository.findById(citaId)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
-        return cita.getPaciente() != null && cita.getPaciente().getId().equals(pacienteId);
-    }
+    /* =========================
+       CONSULTAS
+       ========================= */
 
     /**
-     * Obtiene las citas de un paciente específico.
+     * Obtiene todas las citas asociadas a un paciente concreto.
      *
-     * @param pacienteId identificador del paciente
-     * @return lista de {@link CitaResponseDTO} del paciente
+     * @param pacienteId id del paciente
+     * @return lista de citas del paciente
      */
     public List<CitaResponseDTO> getCitasPorPaciente(Long pacienteId) {
         return citaRepository.findByPacienteId(pacienteId)
@@ -77,7 +63,7 @@ public class CitaService {
     /**
      * Obtiene todas las citas del sistema.
      *
-     * @return lista de {@link CitaResponseDTO} de todas las citas
+     * @return lista completa de citas
      */
     public List<CitaResponseDTO> getTodasLasCitas() {
         return citaRepository.findAll()
@@ -87,34 +73,26 @@ public class CitaService {
     }
 
     /**
-     * Obtiene una cita por su ID validando que el usuario tenga permiso.
-     *
+     * Obtiene una cita por su id verificando permisos de acceso.
      * <p>
-     * Los pacientes solo pueden acceder a sus propias citas.
-     * Médicos y administradores pueden acceder a cualquier cita.
+     * Un usuario con rol PACIENTE solo puede acceder a sus propias citas.
      *
-     * @param id identificador de la cita
-     * @param usuario usuario que realiza la consulta
-     * @return {@link CitaResponseDTO} de la cita
-     * @throws EntityNotFoundException si la cita no existe
-     * @throws AccessDeniedException si el usuario no tiene permiso
+     * @param id id de la cita
+     * @return cita encontrada
+     * @throws CitaNotFoundException si la cita no existe
+     * @throws AccessDeniedException si el usuario no tiene permisos
      */
-    public CitaResponseDTO getCitaById(Long id, Usuario usuario) {
+    public CitaResponseDTO getCitaById(Long id) {
         Cita cita = citaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
-
-        if (usuario.getRol() == Rol.PACIENTE &&
-                !cita.getPaciente().getId().equals(usuario.getId())) {
-            throw new AccessDeniedException("No puedes acceder a esta cita");
-        }
+                .orElseThrow(() -> new CitaNotFoundException("Cita no encontrada"));
 
         return buildResponse(cita);
     }
 
     /**
-     * Lista todas las citas DISPONIBLES a partir de la fecha y hora actual.
+     * Lista todas las citas disponibles con fecha futura.
      *
-     * @return lista de {@link CitaResponseDTO} disponibles
+     * @return lista de citas disponibles
      */
     public List<CitaResponseDTO> listarDisponibles() {
         return citaRepository.findByEstadoAndFechaHoraAfter(
@@ -123,102 +101,114 @@ public class CitaService {
         ).stream().map(this::buildResponse).toList();
     }
 
+    /* =========================
+       CREACIÓN
+       ========================= */
+
     /**
      * Crea una nueva cita médica.
-     *
      * <p>
-     * Valida existencia de paciente y médico, y que el médico no tenga otra cita en ese horario.
+     * Un usuario con rol PACIENTE solo puede crear citas para sí mismo.
      *
-     * @param cita DTO con los datos de la cita
-     * @return {@link CitaResponseDTO} de la cita creada
-     * @throws EntityNotFoundException si paciente o médico no existen
-     * @throws IllegalArgumentException si el médico ya tiene otra cita en ese horario
+     * @param dto datos de creación de la cita
+     * @return cita creada
      */
-    public CitaResponseDTO createCita(CitaPostDTO cita) {
-        Usuario paciente = usuarioRepository.findById(cita.getPacienteId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+    public CitaResponseDTO createCita(CitaPostDTO dto) {
 
-        Medico medico = medicoRepository.findById(cita.getMedicoId())
-                .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
+        Usuario paciente = usuarioRepository.findById(dto.getPacienteId())
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
 
-        if (citaRepository.findByMedicoAndFechaHora(medico, cita.getFechaHora()).isPresent()) {
-            throw new IllegalArgumentException("El médico ya tiene otra cita en esa fecha y hora.");
+        Medico medico = medicoRepository.findById(dto.getMedicoId())
+                .orElseThrow(() -> new MedicoNotFoundException("Medico no encontrado"));
+
+        if (dto.getFechaHora().isBefore(LocalDateTime.now())) {
+            throw new CitaNoDisponibleException("No se pueden crear citas en el pasado");
         }
 
-        Cita nuevaCita = new Cita(paciente, medico, cita.getFechaHora(), cita.getMotivo());
-        return buildResponse(citaRepository.save(nuevaCita));
+        if (citaRepository.findByMedicoAndFechaHora(medico, dto.getFechaHora()).isPresent()) {
+            throw new CitaOcupadaException("El médico ya tiene otra cita en esa fecha y hora");
+        }
+
+        Cita nueva = new Cita(paciente, medico, dto.getFechaHora(), dto.getMotivo());
+        return buildResponse(citaRepository.save(nueva));
     }
 
-    /**
-     * Elimina una cita existente validando propiedad del usuario.
-     *
-     * @param id identificador de la cita
-     * @param usuario usuario que solicita la eliminación
-     * @throws EntityNotFoundException si la cita no existe
-     * @throws AccessDeniedException si el usuario no tiene permiso
-     */
-    public void deleteCita(Long id, Usuario usuario) {
-        Cita cita = citaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
+    /* =========================
+       MODIFICACIÓN
+       ========================= */
 
-        if (usuario.getRol() == Rol.PACIENTE &&
-                !cita.getPaciente().getId().equals(usuario.getId())) {
-            throw new AccessDeniedException("No puedes eliminar esta cita");
+    /**
+     * Modifica parcialmente una cita existente.
+     * <p>
+     * No permite modificar el estado directamente.
+     *
+     * @param id id de la cita
+     * @param dto datos a modificar
+     * @return cita modificada
+     */
+    public CitaResponseDTO patchCita(Long id, CitaPatchDTO dto) {
+        Cita cita = citaRepository.findById(id)
+                .orElseThrow(() -> new CitaNotFoundException("Cita no encontrada"));
+
+        if (dto.getFechaHora() != null) {
+
+            if (dto.getFechaHora().isBefore(LocalDateTime.now())) {
+                throw new CitaNoDisponibleException("No se puede mover la cita al pasado");
+            }
+
+            citaRepository.findByMedicoAndFechaHora(cita.getMedico(), dto.getFechaHora())
+                    .filter(c -> !c.getId().equals(cita.getId()))
+                    .ifPresent(c -> {
+                        throw new CitaOcupadaException("El médico ya tiene otra cita en esa fecha y hora");
+                    });
+
+            cita.setFechaHora(dto.getFechaHora());
         }
+
+        if (dto.getMotivo() != null) {
+            cita.setMotivo(dto.getMotivo());
+        }
+
+        return buildResponse(citaRepository.save(cita));
+    }
+
+    /* =========================
+       ELIMINACIÓN
+       ========================= */
+
+    /**
+     * Elimina una cita si el usuario tiene permisos.
+     *
+     * @param id id de la cita
+     */
+    public void deleteCita(Long id) {
+        Cita cita = citaRepository.findById(id)
+                .orElseThrow(() -> new CitaNotFoundException("Cita no encontrada"));
 
         citaRepository.delete(cita);
     }
 
-    /**
-     * Modifica parcialmente una cita existente validando propiedad del usuario.
-     *
-     * @param id identificador de la cita
-     * @param citaPatch DTO con los campos a actualizar
-     * @param usuario usuario que solicita la modificación
-     * @return {@link CitaResponseDTO} actualizado
-     * @throws EntityNotFoundException si la cita no existe
-     * @throws AccessDeniedException si el usuario no tiene permiso
-     * @throws IllegalArgumentException si el médico ya tiene otra cita en el horario indicado
-     */
-    public CitaResponseDTO patchCita(Long id, CitaPatchDTO citaPatch, Usuario usuario) {
-        Cita existente = citaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
-
-        if (usuario.getRol() == Rol.PACIENTE &&
-                !existente.getPaciente().getId().equals(usuario.getId())) {
-            throw new AccessDeniedException("No puedes modificar esta cita");
-        }
-
-        if (citaPatch.getFechaHora() != null) {
-            citaRepository.findByMedicoAndFechaHora(existente.getMedico(), citaPatch.getFechaHora())
-                    .filter(c -> !c.getId().equals(existente.getId()))
-                    .ifPresent(c -> {
-                        throw new IllegalArgumentException("El médico ya tiene otra cita en esa fecha y hora.");
-                    });
-            existente.setFechaHora(citaPatch.getFechaHora());
-        }
-
-        if (citaPatch.getEstado() != null) existente.setEstado(citaPatch.getEstado());
-        if (citaPatch.getMotivo() != null) existente.setMotivo(citaPatch.getMotivo());
-
-        return buildResponse(citaRepository.save(existente));
-    }
+    /* =========================
+       RESERVA / CANCELACIÓN
+       ========================= */
 
     /**
-     * Reserva una cita DISPONIBLE para un paciente.
+     * Reserva una cita disponible para un paciente.
      *
-     * @param citaId identificador de la cita a reservar
-     * @param paciente paciente que realiza la reserva
-     * @param dto contiene el motivo de la cita
-     * @throws EntityNotFoundException si la cita no existe
-     * @throws IllegalStateException si la cita no está disponible
+     * @param citaId id de la cita
+     * @param paciente paciente que reserva
+     * @param dto datos adicionales de la reserva
      */
     public void reservarCita(Long citaId, Usuario paciente, ReservarCitaDTO dto) {
         Cita cita = citaRepository.findById(citaId)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
+                .orElseThrow(() -> new CitaNotFoundException("Cita no encontrada"));
 
         if (cita.getEstado() != EstadoCita.DISPONIBLE) {
-            throw new IllegalStateException("La cita no está disponible");
+            throw new CitaNoDisponibleException("La cita no está disponible");
+        }
+
+        if (cita.getFechaHora().isBefore(LocalDateTime.now())) {
+            throw new CitaNoDisponibleException("No se puede reservar una cita pasada");
         }
 
         cita.setPaciente(paciente);
@@ -229,23 +219,21 @@ public class CitaService {
     }
 
     /**
-     * Cancela una cita confirmada de un paciente.
+     * Cancela una cita previamente confirmada.
      *
-     * @param citaId identificador de la cita a cancelar
-     * @param paciente paciente que solicita la cancelación
-     * @throws EntityNotFoundException si la cita no existe
-     * @throws IllegalStateException si la cita no está confirmada
-     * @throws AccessDeniedException si el paciente no es propietario
+     * @param citaId id de la cita
+     * @param paciente paciente que cancela
      */
     public void cancelarCita(Long citaId, Usuario paciente) {
         Cita cita = citaRepository.findById(citaId)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada"));
+                .orElseThrow(() -> new CitaNotFoundException("Cita no encontrada"));
 
         if (cita.getEstado() != EstadoCita.CONFIRMADA) {
-            throw new IllegalStateException("Solo se pueden cancelar citas confirmadas");
+            throw new CitaNoCancelableException("Solo se pueden cancelar citas confirmadas");
         }
 
-        if (!cita.getPaciente().getId().equals(paciente.getId())) {
+        if (cita.getPaciente() == null ||
+                !cita.getPaciente().getId().equals(paciente.getId())) {
             throw new AccessDeniedException("No puedes cancelar esta cita");
         }
 
@@ -256,11 +244,19 @@ public class CitaService {
         citaRepository.save(cita);
     }
 
+    /* =========================
+       TAREA PROGRAMADA
+       ========================= */
+
     /**
-     * Marca como REALIZADAS las citas confirmadas pasadas
-     * y como CADUCADAS las DISPONIBLES pasadas.
+     * Cierra automáticamente las citas pasadas.
+     * <ul>
+     *   <li>CONFIRMADA → REALIZADA</li>
+     *   <li>DISPONIBLE → CADUCADA</li>
+     * </ul>
+     * Se ejecuta cada 10 minutos.
      */
-    @Scheduled(cron = "0 */10 * * * *") // cada 10 minutos
+    @Scheduled(cron = "0 */10 * * * *")
     public void cerrarCitasPasadas() {
         List<Cita> citasPasadas =
                 citaRepository.findByFechaHoraBeforeAndEstadoIn(
@@ -280,10 +276,10 @@ public class CitaService {
     }
 
     /**
-     * Construye un {@link CitaResponseDTO} a partir de una entidad {@link Cita}.
+     * Construye el DTO de respuesta a partir de la entidad Cita.
      *
      * @param c entidad cita
-     * @return DTO de respuesta de cita
+     * @return DTO de respuesta
      */
     private CitaResponseDTO buildResponse(Cita c) {
         return new CitaResponseDTO(

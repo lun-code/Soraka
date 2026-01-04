@@ -7,10 +7,14 @@ import com.hospital.Soraka.entity.Especialidad;
 import com.hospital.Soraka.entity.Medico;
 import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.enums.Rol;
+import com.hospital.Soraka.exception.Especialidad.EspecialidadNotFoundException;
+import com.hospital.Soraka.exception.Medico.MedicoExisteException;
+import com.hospital.Soraka.exception.Medico.MedicoNotFoundException;
+import com.hospital.Soraka.exception.Usuario.RolNoValidoException;
+import com.hospital.Soraka.exception.Usuario.UsuarioNotFoundException;
 import com.hospital.Soraka.repository.EspecialidadRepository;
 import com.hospital.Soraka.repository.MedicoRepository;
 import com.hospital.Soraka.repository.UsuarioRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -55,11 +59,11 @@ public class MedicoService {
      *
      * @param id identificador del médico
      * @return {@link MedicoResponseDTO} con los datos del médico
-     * @throws EntityNotFoundException si no existe un médico con el ID indicado
+     * @throws MedicoNotFoundException si no existe un médico con el ID indicado
      */
     public MedicoResponseDTO getMedicoById(Long id){
         Medico medico = medicoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
+                .orElseThrow(() -> new MedicoNotFoundException("Medico no encontrado"));
 
         return buildResponse(medico);
     }
@@ -72,22 +76,24 @@ public class MedicoService {
      *
      * @param medico DTO con los datos necesarios para la creación del médico.
      * @return {@link MedicoResponseDTO} con el médico creado.
-     * @throws EntityNotFoundException si el usuario o la especialidad no existen
-     * @throws IllegalArgumentException si el usuario no tiene rol MEDICO o ya está asignado a otro médico
+     * @throws UsuarioNotFoundException si el usuario no existe
+     * @throws EspecialidadNotFoundException si la especialidad no existe
+     * @throws RolNoValidoException si el usuario no tiene rol MEDICO
+     * @throws MedicoExisteException si el usuario ya está asignado a otro médico
      */
     public MedicoResponseDTO createMedico(MedicoPostDTO medico) {
         Usuario usuario = usuarioRepository.findById(medico.getUsuarioId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
 
         Especialidad especialidad = especialidadRepository.findById(medico.getEspecialidadId())
-                .orElseThrow(() -> new EntityNotFoundException("Especialidad no encontrada"));
+                .orElseThrow(() -> new EspecialidadNotFoundException("Especialidad no encontrada"));
 
         if (usuario.getRol() != Rol.MEDICO) {
-            throw new IllegalArgumentException("El usuario debe tener rol MEDICO para ser asignado como médico");
+            throw new RolNoValidoException("El usuario debe tener rol MEDICO para ser asignado como médico");
         }
 
         if (medicoRepository.existsByUsuario(usuario)) {
-            throw new IllegalArgumentException("El usuario ya está asignado a un médico");
+            throw new MedicoExisteException("El usuario ya está asignado a un médico");
         }
 
         Medico nuevoMedico = new Medico(usuario, especialidad);
@@ -102,11 +108,11 @@ public class MedicoService {
      * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
      *
      * @param id identificador del médico a eliminar
-     * @throws EntityNotFoundException si el médico no existe
+     * @throws MedicoNotFoundException si el médico no existe
      */
     public void deleteMedico(Long id){
         if(!medicoRepository.existsById(id)){
-            throw new EntityNotFoundException("El médico no existe");
+            throw new MedicoNotFoundException("El médico no existe");
         }
         medicoRepository.deleteById(id);
     }
@@ -120,30 +126,33 @@ public class MedicoService {
      * @param id identificador del médico a modificar
      * @param medicoDTO DTO con los campos parciales a actualizar
      * @return {@link MedicoResponseDTO} con el médico actualizado
-     * @throws EntityNotFoundException si el médico, usuario o especialidad no existen
-     * @throws IllegalArgumentException si el usuario no tiene rol MEDICO o ya está asignado a otro médico
+     * @throws MedicoNotFoundException si el médico no existe
+     * @throws EspecialidadNotFoundException si la especialidad no existe
+     * @throws UsuarioNotFoundException si el usuario no existe
+     * @throws RolNoValidoException si el usuario no tiene rol MEDICO
+     * @throws MedicoExisteException si el usuario ya está asignado a otro médico
      */
     public MedicoResponseDTO patchMedico(Long id, MedicoPatchDTO medicoDTO){
         Medico existente = medicoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Medico no encontrado"));
+                .orElseThrow(() -> new MedicoNotFoundException("Medico no encontrado"));
 
         if(medicoDTO.getEspecialidadId() != null){
             Especialidad especialidad = especialidadRepository.findById(medicoDTO.getEspecialidadId())
-                    .orElseThrow(() -> new EntityNotFoundException("Especialidad no encontrada"));
+                    .orElseThrow(() -> new EspecialidadNotFoundException("Especialidad no encontrada"));
             existente.setEspecialidad(especialidad);
         }
 
         if(medicoDTO.getUsuarioId() != null){
             Usuario usuario = usuarioRepository.findById(medicoDTO.getUsuarioId())
-                    .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+                    .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
 
             if (usuario.getRol() != Rol.MEDICO) {
-                throw new IllegalArgumentException("El usuario debe tener rol MEDICO para ser asignado como médico");
+                throw new RolNoValidoException("El usuario debe tener rol MEDICO para ser asignado como médico");
             }
 
             if (medicoRepository.existsByUsuario(usuario)
                     && !usuario.getId().equals(existente.getUsuario().getId())) {
-                throw new IllegalArgumentException("El usuario ya está asignado a otro médico");
+                throw new MedicoExisteException("El usuario ya está asignado a otro médico");
             }
 
             existente.setUsuario(usuario);

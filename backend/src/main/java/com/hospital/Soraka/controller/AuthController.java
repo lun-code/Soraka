@@ -4,6 +4,7 @@ import com.hospital.Soraka.dto.login.LoginRequestDTO;
 import com.hospital.Soraka.dto.login.LoginResponseDTO;
 import com.hospital.Soraka.dto.usuario.UsuarioPostDTO;
 import com.hospital.Soraka.dto.usuario.UsuarioResponseDTO;
+import com.hospital.Soraka.exception.Usuario.EmailYaEnUsoException;
 import com.hospital.Soraka.security.JwtService;
 import com.hospital.Soraka.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,7 +92,7 @@ public class AuthController {
      *
      * @param dto DTO con los datos del usuario a registrar.
      * @return {@link UsuarioResponseDTO} con los datos del usuario creado.
-     * @throws com.hospital.Soraka.exception.EmailYaEnUsoException si el email ya está registrado.
+     * @throws EmailYaEnUsoException si el email ya está registrado.
      * @throws org.springframework.security.access.AccessDeniedException si el usuario autenticado no tiene rol ADMIN.
      */
     @PreAuthorize("hasAuthority('ADMIN')")

@@ -4,8 +4,10 @@ import com.hospital.Soraka.dto.especialidad.EspecialidadPatchDTO;
 import com.hospital.Soraka.dto.especialidad.EspecialidadPostDTO;
 import com.hospital.Soraka.dto.especialidad.EspecialidadResponseDTO;
 import com.hospital.Soraka.entity.Especialidad;
+import com.hospital.Soraka.exception.Especialidad.EspecialidadExisteException;
+import com.hospital.Soraka.exception.Especialidad.EspecialidadInvalidaException;
+import com.hospital.Soraka.exception.Especialidad.EspecialidadNotFoundException;
 import com.hospital.Soraka.repository.EspecialidadRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -44,11 +46,11 @@ public class EspecialidadService {
      *
      * @param id Id de la especialidad.
      * @return {@link EspecialidadResponseDTO} con información de la especialidad.
-     * @throws EntityNotFoundException si la especialidad no existe.
+     * @throws EspecialidadNotFoundException si la especialidad no existe.
      */
     public EspecialidadResponseDTO getEspecialidadById(Long id) {
         Especialidad especialidad = especialidadRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("No existe esa especialidad."));
+                .orElseThrow(() -> new EspecialidadNotFoundException("No existe esa especialidad."));
         return buildResponse(especialidad);
     }
 
@@ -60,12 +62,12 @@ public class EspecialidadService {
      *
      * @param especialidad DTO con los datos de la especialidad a crear.
      * @return {@link EspecialidadResponseDTO} con la especialidad creada.
-     * @throws IllegalArgumentException si ya existe una especialidad con el mismo nombre.
+     * @throws EspecialidadExisteException si ya existe una especialidad con el mismo nombre.
      */
     public EspecialidadResponseDTO createEspecialidad(EspecialidadPostDTO especialidad) {
 
         if (especialidadRepository.existsByNombre(especialidad.getNombre())) {
-            throw new IllegalArgumentException("La especialidad ya existe.");
+            throw new EspecialidadExisteException("La especialidad ya existe.");
         }
 
         Especialidad nuevaEspecialidad = new Especialidad(especialidad.getNombre());
@@ -81,12 +83,12 @@ public class EspecialidadService {
      * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
      *
      * @param id ID de la especialidad a eliminar.
-     * @throws EntityNotFoundException si la especialidad no existe.
+     * @throws EspecialidadNotFoundException si la especialidad no existe.
      */
     public void deleteEspecialidad(Long id) {
 
         if (!especialidadRepository.existsById(id)) {
-            throw new EntityNotFoundException("No existe esa especialidad.");
+            throw new EspecialidadNotFoundException("No existe esa especialidad.");
         }
         especialidadRepository.deleteById(id);
     }
@@ -100,23 +102,24 @@ public class EspecialidadService {
      * @param id ID de la especialidad a actualizar.
      * @param especialidad DTO con los campos a modificar.
      * @return {@link EspecialidadResponseDTO} con la especialidad actualizada.
-     * @throws EntityNotFoundException si la especialidad no existe.
-     * @throws IllegalArgumentException si el nombre es inválido o ya existe otra especialidad con el mismo nombre.
+     * @throws EspecialidadNotFoundException si la especialidad no existe.
+     * @throws EspecialidadInvalidaException si el nombre es inválido o
+     * @throws EspecialidadExisteException si ya existe otra especialidad con el mismo nombre.
      */
     public EspecialidadResponseDTO patchEspecialidad(Long id, EspecialidadPatchDTO especialidad) {
 
         Especialidad existente = especialidadRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("No existe esa especialidad."));
+                .orElseThrow(() -> new EspecialidadNotFoundException("No existe esa especialidad."));
 
         if (especialidad.getNombre() != null) {
 
             if (especialidad.getNombre().isBlank()) {
-                throw new IllegalArgumentException("La especialidad no puede estar vacía.");
+                throw new EspecialidadInvalidaException("La especialidad no puede estar vacía.");
             }
 
             if (especialidadRepository.existsByNombre(especialidad.getNombre()) &&
                     !existente.getNombre().equals(especialidad.getNombre())) {
-                throw new IllegalArgumentException("Ya existe una especialidad con el mismo nombre.");
+                throw new EspecialidadExisteException("Ya existe una especialidad con el mismo nombre.");
             }
 
             existente.setNombre(especialidad.getNombre());
