@@ -68,22 +68,6 @@ public class CitaController {
     }
 
     /**
-     * Genera automáticamente citas disponibles para los médicos del sistema.
-     * <p>
-     * Este endpoint está pensado para uso administrativo o de mantenimiento
-     * y normalmente se ejecuta de forma programada mediante tareas {@code @Scheduled}.
-     *
-     * @return respuesta HTTP 201 (CREATED) sin cuerpo.
-     */
-    @PostMapping("/generar")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Void> generarCitasDisponibles() {
-
-        citaService.generarCitasDisponibles();
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    /**
      * Modifica parcialmente una cita existente.
      *
      * @param id identificador de la cita
