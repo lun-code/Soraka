@@ -27,6 +27,17 @@ public class CitaController {
     private CitaService citaService;
 
     /**
+     * Lista todas las citas
+     *
+     * @return lista de citas
+     */
+    @GetMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public List<CitaResponseDTO> getTodasCitas(){
+        return citaService.getTodasLasCitas();
+    }
+
+    /**
      * Obtiene las citas del paciente autenticado.
      *
      * @param authentication contexto de seguridad
