@@ -1,19 +1,23 @@
 package com.hospital.Soraka.service;
 
 import com.hospital.Soraka.dto.usuario.*;
+import com.hospital.Soraka.entity.TokenConfirmacion;
 import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.enums.Rol;
 import com.hospital.Soraka.exception.Usuario.CambioRolMedicoNoPermitidoException;
 import com.hospital.Soraka.exception.Usuario.EmailYaEnUsoException;
 import com.hospital.Soraka.exception.Usuario.UsuarioNotFoundException;
 import com.hospital.Soraka.repository.MedicoRepository;
+import com.hospital.Soraka.repository.TokenConfirmacionRepository;
 import com.hospital.Soraka.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Servicio de dominio encargado de la gestión de usuarios del sistema.
@@ -34,6 +38,12 @@ public class UsuarioService {
 
     @Autowired
     private MedicoRepository medicoRepository;
+
+    @Autowired
+    TokenConfirmacionRepository tokenConfirmacionRepository;
+
+    @Autowired
+    EmailService emailService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -70,15 +80,24 @@ public class UsuarioService {
     }
 
     /**
-     * Crea un nuevo usuario en el sistema.
+     * Crea un nuevo usuario en el sistema y envía un correo de confirmación.
      *
-     * <p>
-     * La contraseña se almacena cifrada usando {@link PasswordEncoder}.
-     * Solo un administrador debería llamar a este método desde el controller.
+     * <p>El flujo completo es el siguiente:</p>
+     * <ol>
+     *     <li>Se valida que el email no esté en uso; si lo está, lanza {@link EmailYaEnUsoException}.</li>
+     *     <li>Se crea la entidad {@link Usuario} con la contraseña cifrada mediante {@link PasswordEncoder}.</li>
+     *     <li>Se establece explícitamente {@code isActivo = false}, dejando la cuenta inactiva hasta confirmar el email.</li>
+     *     <li>Se guarda el usuario en la base de datos.</li>
+     *     <li>Se genera un token único {@link java.util.UUID} para la confirmación de la cuenta.</li>
+     *     <li>Se crea y persiste un {@link com.hospital.Soraka.entity.TokenConfirmacion} asociado al usuario, con fecha de expiración de 24 horas.</li>
+     *     <li>Se envía un email de confirmación al usuario mediante {@link EmailService#enviarEmailConfirmacion(String, String)}.</li>
+     * </ol>
      *
-     * @param usuarioDTO DTO con los datos para la creación del usuario
-     * @return {@link UsuarioResponseDTO} con el usuario creado
-     * @throws EmailYaEnUsoException si el email ya está en uso
+     * <p>Este método <b>solo debe ser invocado por un administrador</b> desde el controller.</p>
+     *
+     * @param usuarioDTO DTO con los datos necesarios para crear el usuario.
+     * @return {@link UsuarioResponseDTO} con la información del usuario recién creado.
+     * @throws EmailYaEnUsoException si el email proporcionado ya está registrado en el sistema.
      */
     public UsuarioResponseDTO createUsuario(UsuarioPostDTO usuarioDTO){
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -89,8 +108,24 @@ public class UsuarioService {
                 usuarioDTO.getNombre(),
                 usuarioDTO.getEmail(),
                 passwordEncoder.encode(usuarioDTO.getPassword()),
-                usuarioDTO.getRol());
+                usuarioDTO.getRol()
+        );
+
+        nuevo.setActivo(false); // <- Explícito
+
         Usuario guardado = usuarioRepository.save(nuevo);
+
+        String token = UUID.randomUUID().toString();
+
+        TokenConfirmacion confirmacion = new TokenConfirmacion();
+        confirmacion.setToken(token);
+        confirmacion.setUsuario(nuevo);
+        confirmacion.setFechaExpiracion(LocalDateTime.now().plusHours(24));
+
+        tokenConfirmacionRepository.save(confirmacion);
+
+        emailService.enviarEmailConfirmacion(nuevo.getEmail(), token);
+
         return buildResponse(guardado);
     }
 

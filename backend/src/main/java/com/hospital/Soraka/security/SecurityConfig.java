@@ -65,6 +65,7 @@ public class SecurityConfig {
 
                         // Login
                         .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/auth/confirmar/**").permitAll()
 
 
                         // Endpoints protegidos por autenticación o rol
