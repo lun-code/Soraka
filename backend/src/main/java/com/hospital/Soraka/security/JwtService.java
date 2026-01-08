@@ -2,6 +2,7 @@ package com.hospital.Soraka.security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,8 @@ public class JwtService {
 
     // Clave secreta utilizada para firmar los tokens
     // En proyectos reales debería ser mucho más larga y almacenada de forma segura (env vars)
-    private final String SECRET_KEY = "una-clave-muy-larga-de-mas-de-32-caracteres123";
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
 
     /**
      * Genera un token JWT para un usuario
