@@ -52,4 +52,45 @@ public class JwtService {
                 // Devolvemos el subject, que en este caso es el username/email
                 .getSubject();
     }
+
+    /**
+     * Valida si el token es válido para el usuario proporcionado.
+     * Comprueba que el username del token coincida con el del usuario y que
+     * el token no haya expirado.
+     *
+     * @param token JWT enviado por el cliente.
+     * @param userDetails Información del usuario cargada desde la base de datos.
+     * @return true si el token es válido y vigente, false en caso contrario.
+     */
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+
+    /**
+     * Verifica si el token JWT ha expirado.
+     * Compara la fecha de expiración contenida en el token con la fecha actual.
+     *
+     * @param token JWT a verificar.
+     * @return true si la fecha de expiración es anterior a la actual.
+     */
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    /**
+     * Extrae la fecha de expiración del cuerpo (Claims) del token.
+     * Utiliza el parser de Jwts configurado con la clave secreta.
+     *
+     * @param token JWT del cual extraer la fecha.
+     * @return Objeto Date con la fecha de expiración.
+     */
+    private Date extractExpiration(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY.getBytes())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+    }
 }

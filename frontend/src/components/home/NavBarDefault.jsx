@@ -1,6 +1,7 @@
-import React from "react";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/descarga.png";
 import { Link } from 'react-router-dom';
+import { Home, Users, Info, Phone } from "lucide-react"
+import { useState, useEffect } from "react";
 import {
   Navbar,
   MobileNav,
@@ -9,33 +10,62 @@ import {
   IconButton,
 } from "@material-tailwind/react";
  
+function NavList() {
+  const navItems = [
+    { name: "Inicio", path: "/", icon: <Home size={18} /> },
+    { name: "Especialistas", path: "/especialistas", icon: <Users size={18} /> },
+    { name: "Sobre Nosotros", path: "#", icon: <Info size={18} /> },
+    { name: "Contacto", path: "#", icon: <Phone size={18} /> },
+  ];
+
+  return (
+    <ul className="flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-8">
+      {navItems.map((item) => (
+        <Typography
+          key={item.name}
+          as="li"
+          variant="small"
+          color="white"
+          className="p-2 font-bold text-lg hover:text-blue-200 transition-all flex items-center gap-2 justify-center lg:justify-start"
+        >
+          <Link to={item.path} className="flex items-center gap-2">
+            {item.icon}
+            {item.name}
+          </Link>
+        </Typography>
+      ))}
+    </ul>
+  );
+}
+
 export function NavBarDefault() {
-  const [openNav, setOpenNav] = React.useState(false);
+  const [openNav, setOpenNav] = useState(false);
  
-  React.useEffect(() => {
-    window.addEventListener(
-      "resize",
-      () => window.innerWidth >= 960 && setOpenNav(false),
-    );
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 960) setOpenNav(false);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
  
   return (
-    // He quitado el borde rojo, pero he mantenido la estructura
+    
     <div className="w-full"> 
-      <Navbar className="w-full max-w-full rounded-none bg-[#172554] bg-opacity-100 border-none px-4 py-4 lg:px-8 lg:py-5">
-        <div className="flex items-center justify-between text-white container mx-auto">
+      <Navbar className="w-full max-w-full rounded-none border-none bg-[#172554] bg-opacity-100 py-0 lg:h-28">
+        <div className="flex h-full items-center justify-between text-white">
           
           {/* LOGO: Aumentado de tamaño */}
-          <Typography
-            as="a"
-            href="#"
-            className="cursor-pointer py-1.5"
+          <Link
+            to="/"
+            className="cursor-pointer"
           >
             <div className="flex items-center gap-4">
               <img
                 src={logo}
                 alt="logo"
-                className="h-16 w-auto md:h-20 lg:h-24 shrink-0 rounded-full border-2 border-white/20 shadow-sm"
+                className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto shrink-0 rounded-full border-2 border-white/20 shadow-sm"
                 loading="lazy"
               />
               {/* Opcional: Nombre de la clínica al lado del logo */}
@@ -43,7 +73,11 @@ export function NavBarDefault() {
                 Clínica Virtual
               </span>
             </div>
-          </Typography>
+          </Link>
+
+          <div className="hidden lg:flex items-center">
+            <NavList/>
+          </div>
 
           {/* BOTÓN LOGIN: Más grande y con mejor fuente */}
           <div className="flex items-center gap-x-1">
@@ -52,7 +86,7 @@ export function NavBarDefault() {
                 variant="gradient" 
                 size="lg" // Cambiado de sm a lg
                 color="white"
-                className="hidden lg:inline-block px-10 py-4 text-[#172554] text-base font-bold shadow-xl hover:scale-105 transition-transform"
+                className="hidden lg:inline-block px-10 py-3 text-[#172554] text-base font-bold shadow-xl hover:scale-105 transition-transform"
               >
                 <span>Iniciar sesión</span>
               </Button>
@@ -79,12 +113,21 @@ export function NavBarDefault() {
         </div>
 
         {/* Menú móvil ajustado */}
-        <MobileNav open={openNav} className="bg-[#172554] px-4 pb-4">
-          <div className="flex flex-col gap-2">
-            <Button fullWidth variant="gradient" size="lg" className="mt-4">
-              Acceso Pacientes
+        <MobileNav open={openNav} className="bg-[#172554] px-4">
+          <NavList />
+
+          <Link to="/login">
+            <Button
+              fullWidth
+              variant="gradient"
+              size="lg"
+              className="mt-4 text-[#172554] font-bold"
+              color="white"
+            >
+              Iniciar sesión
             </Button>
-          </div>
+          </Link>
+
         </MobileNav>
       </Navbar>
     </div>

@@ -1,4 +1,4 @@
-import logo from "../../assets/logo.png"; // Asegúrate que la ruta sea correcta
+import logo from "../../assets/descarga.png"; // Asegúrate que la ruta sea correcta
 import { Typography } from "@material-tailwind/react";
 import { Phone, Mail, MapPin } from "lucide-react"; // Mantenemos estos que son de UI
 

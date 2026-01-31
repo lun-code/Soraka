@@ -40,20 +40,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Método principal del filtro que valida el JWT de cada request.
-     * Flujo:
-     * 1. Obtiene el header Authorization de la request.
-     * 2. Si no existe o no empieza con "Bearer ", pasa al siguiente filtro.
-     * 3. Extrae el token JWT (quitando "Bearer ").
-     * 4. Obtiene el username (email) del token usando JwtService.
-     * 5. Carga el usuario desde la base de datos usando UserDetailsService.
-     * 6. Crea un objeto Authentication y lo guarda en SecurityContextHolder.
-     * 7. Continúa con la cadena de filtros.
+     * * Modificaciones para robustez:
+     * 1. Captura excepciones de tokens expirados o malformados para no bloquear rutas públicas.
+     * 2. Utiliza isTokenValid para asegurar la integridad del usuario antes de autenticar.
      *
-     * @param request Request HTTP entrante
+     * @param request  Request HTTP entrante
      * @param response Response HTTP
-     * @param filterChain Cadena de filtros
+     * @param filterChain Cadena de filtros de Spring Security
      * @throws ServletException cuando ocurre un error del servlet
-     * @throws IOException cuando ocurre un error de entrada/salida
+     * @throws IOException      cuando ocurre un error de entrada/salida
      */
     @Override
     protected void doFilterInternal(
@@ -62,36 +57,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // Obtiene el header Authorization
-        String authHeader = request.getHeader("Authorization");
+        // 1. Obtiene el header Authorization
+        final String authHeader = request.getHeader("Authorization");
 
-        // Si no hay token o no empieza con "Bearer ", pasa al siguiente filtro
+        // 2. Si no hay header o no empieza con "Bearer ", pasamos al siguiente filtro (acceso anónimo)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Extrae el token quitando "Bearer "
-        String token = authHeader.substring(7);
+        final String token = authHeader.substring(7);
 
-        // Obtiene el email del token
-        String email = jwtService.extractUsername(token);
+        try {
+            // 3. Extrae el username/email del token
+            final String email = jwtService.extractUsername(token);
 
-        // Carga el usuario desde la base de datos
-        UserDetails user = userDetailsService.loadUserByUsername(email);
+            // 4. Si hay email y el usuario no está ya autenticado en el contexto
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-        // Crea un objeto Authentication con el usuario y sus roles
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                        user,
-                        null,
-                        user.getAuthorities()
-                );
+                // Carga los detalles del usuario desde la base de datos
+                UserDetails user = userDetailsService.loadUserByUsername(email);
 
-        // Establece la autenticación en el contexto de seguridad
-        SecurityContextHolder.getContext().setAuthentication(auth);
+                // 5. Valida que el token sea vigente y pertenezca al usuario
+                if (jwtService.isTokenValid(token, user)) {
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    user,
+                                    null,
+                                    user.getAuthorities()
+                            );
 
-        // Continúa con la cadena de filtros
+                    // Guarda la autenticación en el contexto de seguridad
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            }
+        } catch (Exception e) {
+            // 6. Si el token es inválido o expiró, no hacemos nada.
+            // Simplemente no se establece la autenticación.
+            // Spring Security decidirá en SecurityConfig si la ruta requiere permiso o no.
+            logger.warn("No se pudo procesar el token JWT: " + e.getMessage());
+        }
+
+        // 7. Continúa con la cadena de filtros
         filterChain.doFilter(request, response);
     }
 }

@@ -1,5 +1,6 @@
 import { Shield, Clock, User, ArrowRight } from 'lucide-react'; // Iconos limpios
 import clinica from "../../assets/clinica.png";
+import { Link } from "react-router-dom";
 
 export function Hero()  {
 
@@ -17,12 +18,16 @@ export function Hero()  {
               Gestión rápida, segura y sin llamadas telefónicas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center">
-                Pedir Cita Ahora <ArrowRight className="ml-2 h-5 w-5" />
-              </button>
-              <button className="bg-white text-blue-600 border border-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 hover:text-white transition">
-                Ver Especialistas
-              </button>
+              <Link to="/login">
+                <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center">
+                  Pedir Cita Ahora <ArrowRight className="ml-2 h-5 w-5" />
+                </button>
+              </Link>
+              <Link to="/especialistas">
+                <button className="bg-white text-blue-600 border border-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
+                  Ver Especialistas
+                </button>
+              </Link>
             </div>
           </div>
           <div className="lg:w-1/2 flex justify-center">
@@ -51,10 +56,12 @@ export function Hero()  {
             { title: 'Seguridad Total', desc: 'Tus datos médicos están protegidos bajo normativa GDPR.', icon: <Shield className="text-blue-500" /> },
             { title: 'Especialistas', desc: 'Más de 50 profesionales de diversas áreas a tu disposición.', icon: <User className="text-blue-500" /> }
           ].map((item, index) => (
-            <div key={index} className="p-8 border border-gray-100 rounded-xl hover:shadow-lg transition bg-white text-center">
-              <div className="flex justify-center mb-4">{item.icon}</div>
-              <h3 className="text-xl font-bold mb-2 text-gray-800">{item.title}</h3>
-              <p className="text-gray-600">{item.desc}</p>
+            <div key={index} className="rounded-xl p-[3px] bg-gradient-to-t from-purple-900 to-blue-800 hover:shadow-xl transition hover:-translate-y-1">
+              <div className="p-8 bg-white rounded-[10px] text-center">
+                <div className="flex justify-center mb-4">{item.icon}</div>
+                <h3 className="text-xl font-bold mb-2 text-gray-800">{item.title}</h3>
+                <p className="text-gray-600">{item.desc}</p>
+              </div>
             </div>
           ))}
         </div>
