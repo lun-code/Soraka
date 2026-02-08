@@ -1,9 +1,8 @@
-import { Shield, Clock, User, ArrowRight } from 'lucide-react'; // Iconos limpios
+import { Shield, Clock, User, ArrowRight } from "lucide-react"; // Iconos limpios
 import clinica from "../../assets/clinica.png";
 import { Link } from "react-router-dom";
 
-export function Hero()  {
-
+export function Hero() {
   return (
     <div className="bg-white">
       {/* 1. SECCIÓN HERO */}
@@ -11,10 +10,11 @@ export function Hero()  {
         <div className="max-w-10xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center">
           <div className="lg:w-1/2 mb-10 mx-10 lg:mb-0">
             <h1 className="text-4xl md:text-5xl font-extrabold text-blue-900 mb-6 leading-tight">
-              <p>Tu salud es lo primero,</p> <span className="text-blue-600">reserva tu cita online.</span>
+              <p>Tu salud es lo primero,</p>{" "}
+              <span className="text-blue-600">reserva tu cita online.</span>
             </h1>
             <p className="text-lg text-gray-600 mb-8">
-              Accede a los mejores especialistas desde la comodidad de tu casa. 
+              Accede a los mejores especialistas desde la comodidad de tu casa.
               Gestión rápida, segura y sin llamadas telefónicas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -33,10 +33,10 @@ export function Hero()  {
           <div className="lg:w-1/2 flex justify-center">
             {/* Aquí puedes poner una imagen médica */}
             <div className="w-full h-64 md:h-96 bg-blue-200 rounded-2xl shadow-xl flex items-center justify-center text-blue-400 italic">
-              <img 
+              <img
                 src={clinica}
                 alt="clinica"
-                className='w-full h-full object-cover rounded'
+                className="w-full h-full object-cover rounded"
               />
             </div>
           </div>
@@ -46,20 +46,41 @@ export function Hero()  {
       {/* 2. SECCIÓN DE SERVICIOS (TARJETAS) */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900">¿Por qué elegir nuestro portal?</h2>
-          <p className="mt-4 text-gray-600">Diseñado para facilitar tu bienestar y el de tu familia.</p>
+          <h2 className="text-3xl font-bold text-gray-900">
+            ¿Por qué elegir nuestro portal?
+          </h2>
+          <p className="mt-4 text-gray-600">
+            Diseñado para facilitar tu bienestar y el de tu familia.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { title: 'Gestión 24/7', desc: 'Reserva tu cita en cualquier momento del día.', icon: <Clock className="text-blue-500" /> },
-            { title: 'Seguridad Total', desc: 'Tus datos médicos están protegidos bajo normativa GDPR.', icon: <Shield className="text-blue-500" /> },
-            { title: 'Especialistas', desc: 'Más de 50 profesionales de diversas áreas a tu disposición.', icon: <User className="text-blue-500" /> }
+            {
+              title: "Gestión 24/7",
+              desc: "Reserva tu cita en cualquier momento del día.",
+              icon: <Clock className="text-blue-500" />,
+            },
+            {
+              title: "Seguridad Total",
+              desc: "Tus datos médicos están protegidos bajo normativa GDPR.",
+              icon: <Shield className="text-blue-500" />,
+            },
+            {
+              title: "Especialistas",
+              desc: "Más de 50 profesionales de diversas áreas a tu disposición.",
+              icon: <User className="text-blue-500" />,
+            },
           ].map((item, index) => (
-            <div key={index} className="rounded-xl p-[3px] bg-gradient-to-t from-purple-900 to-blue-800 hover:shadow-xl transition hover:-translate-y-1">
+            <div
+              key={index}
+              className="rounded-xl p-[3px] bg-gradient-to-t from-purple-900 to-blue-800 hover:shadow-xl transition hover:-translate-y-1"
+            >
               <div className="p-8 bg-white rounded-[10px] text-center">
                 <div className="flex justify-center mb-4">{item.icon}</div>
-                <h3 className="text-xl font-bold mb-2 text-gray-800">{item.title}</h3>
+                <h3 className="text-xl font-bold mb-2 text-gray-800">
+                  {item.title}
+                </h3>
                 <p className="text-gray-600">{item.desc}</p>
               </div>
             </div>
@@ -72,7 +93,9 @@ export function Hero()  {
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div>
             <div className="text-4xl font-bold">+15k</div>
-            <div className="text-blue-200 uppercase text-sm mt-2">Pacientes Felices</div>
+            <div className="text-blue-200 uppercase text-sm mt-2">
+              Pacientes Felices
+            </div>
           </div>
           <div>
             <div className="text-4xl font-bold">50+</div>
@@ -84,10 +107,12 @@ export function Hero()  {
           </div>
           <div>
             <div className="text-4xl font-bold">4.9/5</div>
-            <div className="text-blue-200 uppercase text-sm mt-2">Valoración</div>
+            <div className="text-blue-200 uppercase text-sm mt-2">
+              Valoración
+            </div>
           </div>
         </div>
       </section>
     </div>
   );
-};
+}

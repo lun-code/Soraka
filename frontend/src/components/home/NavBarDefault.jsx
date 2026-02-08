@@ -1,6 +1,6 @@
 import logo from "../../assets/descarga.png";
-import { Link } from 'react-router-dom';
-import { Home, Users, Info, Phone } from "lucide-react"
+import { Link } from "react-router-dom";
+import { Home, Users, Info, Phone } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   Navbar,
@@ -9,11 +9,15 @@ import {
   Button,
   IconButton,
 } from "@material-tailwind/react";
- 
+
 function NavList() {
   const navItems = [
     { name: "Inicio", path: "/", icon: <Home size={18} /> },
-    { name: "Especialistas", path: "/especialistas", icon: <Users size={18} /> },
+    {
+      name: "Especialistas",
+      path: "/especialistas",
+      icon: <Users size={18} />,
+    },
     { name: "Sobre Nosotros", path: "#", icon: <Info size={18} /> },
     { name: "Contacto", path: "#", icon: <Phone size={18} /> },
   ];
@@ -40,7 +44,7 @@ function NavList() {
 
 export function NavBarDefault() {
   const [openNav, setOpenNav] = useState(false);
- 
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 960) setOpenNav(false);
@@ -49,18 +53,13 @@ export function NavBarDefault() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
- 
+
   return (
-    
-    <div className="w-full"> 
+    <div className="w-full">
       <Navbar className="w-full max-w-full rounded-none border-none bg-[#172554] bg-opacity-100 py-0 lg:h-28">
         <div className="flex h-full items-center justify-between text-white">
-          
           {/* LOGO: Aumentado de tamaño */}
-          <Link
-            to="/"
-            className="cursor-pointer"
-          >
+          <Link to="/" className="cursor-pointer">
             <div className="flex items-center gap-4">
               <img
                 src={logo}
@@ -76,14 +75,14 @@ export function NavBarDefault() {
           </Link>
 
           <div className="hidden lg:flex items-center">
-            <NavList/>
+            <NavList />
           </div>
 
           {/* BOTÓN LOGIN: Más grande y con mejor fuente */}
           <div className="flex items-center gap-x-1">
             <Link to="/login">
-              <Button 
-                variant="gradient" 
+              <Button
+                variant="gradient"
                 size="lg" // Cambiado de sm a lg
                 color="white"
                 className="hidden lg:inline-block px-10 py-3 text-[#172554] text-base font-bold shadow-xl hover:scale-105 transition-transform"
@@ -101,12 +100,33 @@ export function NavBarDefault() {
             onClick={() => setOpenNav(!openNav)}
           >
             {openNav ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" className="h-8 w-8" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                className="h-8 w-8"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             )}
           </IconButton>
@@ -127,7 +147,6 @@ export function NavBarDefault() {
               Iniciar sesión
             </Button>
           </Link>
-
         </MobileNav>
       </Navbar>
     </div>
