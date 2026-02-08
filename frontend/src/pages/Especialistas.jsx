@@ -24,7 +24,7 @@ export function Especialistas() {
     <>
         <NavBarDefault/>
         <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
             
             {/* Botón de Volver */}
             <div className="mb-8">
@@ -51,28 +51,25 @@ export function Especialistas() {
             {loading ? (
             <div className="text-center py-20 text-blue-600 font-semibold">Cargando especialistas...</div>
             ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-20">
                 {medicos.length > 0 ? (
                 medicos.map((medico) => (
-                    <div key={medico.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-                    <div className="p-6">
-                        <div className="flex items-center mb-4">
-                        <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                            <User size={32} />
+                    <div key={medico.id} className="bg-indigo-50 rounded-2xl shadow-lg border border-gray-100 w-auto h-80">
+                        <div className="p-8 w-full h-full flex flex-col">
+                            <div className="flex items-center mb-6">
+                                <div className="h-48 w-48 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                                    <img src={medico.urlFoto} alt={medico.nombreUsuario} className='h-48 w-48 rounded-full object-cover'/>
+                                </div>
+                                <div className="ml-4">
+                                    <h3 className="text-4xl font-bold text-gray-900">{medico.nombreUsuario}</h3>
+                                    <p className="text-blue-600 font-medium text-xl">{medico.nombreEspecialidad}</p>
+                                </div>
+                            </div>
+                                <div className="flex items-center text-gray-600 text-2xl mt-auto">
+                                    <MapPin size={20} className="mr-2" />
+                                    {medico.ubicacion || "Consultorio Central"}
+                                </div>
                         </div>
-                        <div className="ml-4">
-                            <h3 className="text-xl font-bold text-gray-900">{medico.nombreUsuario}</h3>
-                            <p className="text-blue-600 font-medium">{medico.nombreEspecialidad}</p>
-                        </div>
-                        </div>
-                        
-                        <div className="space-y-2 mb-6">
-                        <div className="flex items-center text-gray-600 text-sm">
-                            <MapPin size={16} className="mr-2" />
-                            {medico.ubicacion || "Consultorio Central"}
-                        </div>
-                        </div>
-                    </div>
                     </div>
                 ))
                 ) : (

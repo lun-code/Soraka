@@ -96,7 +96,7 @@ public class MedicoService {
             throw new MedicoExisteException("El usuario ya está asignado a un médico");
         }
 
-        Medico nuevoMedico = new Medico(usuario, especialidad);
+        Medico nuevoMedico = new Medico(usuario, especialidad, medico.getUrlFoto() );
         Medico guardado = medicoRepository.save(nuevoMedico);
         return buildResponse(guardado);
     }
@@ -175,7 +175,8 @@ public class MedicoService {
                 m.getUsuario().getNombre(),
                 m.getUsuario().getEmail(),
                 m.getEspecialidad().getId(),
-                m.getEspecialidad().getNombre()
+                m.getEspecialidad().getNombre(),
+                m.getUrlFoto()
         );
     }
 }

@@ -69,6 +69,7 @@ public class SecurityConfig {
 
                         // Listar médicos
                         .requestMatchers(HttpMethod.GET, "/api/medicos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
                         // Endpoints protegidos por autenticación o rol
 

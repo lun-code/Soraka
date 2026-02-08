@@ -19,14 +19,14 @@ function NavList() {
   ];
 
   return (
-    <ul className="flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-8">
+    <ul className="flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-12">
       {navItems.map((item) => (
         <Typography
           key={item.name}
           as="li"
           variant="small"
           color="white"
-          className="p-2 font-bold text-lg hover:text-blue-200 transition-all flex items-center gap-2 justify-center lg:justify-start"
+          className="font-bold text-lg hover:text-blue-200 transition-all flex justify-center"
         >
           <Link to={item.path} className="flex items-center gap-2">
             {item.icon}

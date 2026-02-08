@@ -4,6 +4,7 @@ public class MedicoResponseDTO {
 
     // Medico
     private Long id;
+    private String urlFoto;
 
     // Usuario
     private Long usuarioId;
@@ -21,7 +22,8 @@ public class MedicoResponseDTO {
             String nombreUsuario,
             String emailUsuario,
             Long especialidadId,
-            String nombreEspecialidad
+            String nombreEspecialidad,
+            String urlFoto
     ) {
         this.id = id;
         this.usuarioId = usuarioId;
@@ -29,6 +31,7 @@ public class MedicoResponseDTO {
         this.emailUsuario = emailUsuario;
         this.especialidadId = especialidadId;
         this.nombreEspecialidad = nombreEspecialidad;
+        this.urlFoto = urlFoto;
     }
 
     // Getters
@@ -38,4 +41,5 @@ public class MedicoResponseDTO {
     public String getEmailUsuario() { return emailUsuario; }
     public Long getEspecialidadId() { return especialidadId; }
     public String getNombreEspecialidad() { return nombreEspecialidad; }
+    public String getUrlFoto() { return urlFoto; }
 }

@@ -36,7 +36,7 @@ export function Hero()  {
               <img 
                 src={clinica}
                 alt="clinica"
-                className='w-full h-full object-cover'
+                className='w-full h-full object-cover rounded'
               />
             </div>
           </div>

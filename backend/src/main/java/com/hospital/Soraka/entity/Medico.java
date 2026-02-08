@@ -19,11 +19,15 @@ public class Medico {
     @JoinColumn(name = "especialidad_id")
     private Especialidad especialidad;
 
+    @Column(name = "foto_url")
+    private String urlFoto;
+
     // CONSTRUCTORES
 
-    public Medico(Usuario usuario, Especialidad especialidad) {
+    public Medico(Usuario usuario, Especialidad especialidad, String urlFoto) {
         this.usuario = usuario;
         this.especialidad = especialidad;
+        this.urlFoto = urlFoto;
     }
 
     public Medico() {}
@@ -48,5 +52,13 @@ public class Medico {
 
     public void setEspecialidad(Especialidad especialidad) {
         this.especialidad = especialidad;
+    }
+
+    public String getUrlFoto() {
+        return urlFoto;
+    }
+
+    public void setUrlFoto(String urlFoto) {
+        this.urlFoto = urlFoto;
     }
 }
