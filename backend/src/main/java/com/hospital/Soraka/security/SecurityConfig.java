@@ -68,8 +68,15 @@ public class SecurityConfig {
                         .requestMatchers("/auth/confirmar/**").permitAll()
 
                         // Listar médicos
-                        .requestMatchers(HttpMethod.GET, "/api/medicos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/medicos/publicos").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+
+                        // Listar especialidades
+                        .requestMatchers(HttpMethod.GET, "/api/especialidades/**").permitAll()
+
+                        // Listar usuarios
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/publico").permitAll()
+
 
                         // Endpoints protegidos por autenticación o rol
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User, MapPin, ArrowLeft } from "lucide-react"; // Añadimos ArrowLeft
+import { MapPin, ArrowLeft } from "lucide-react"; // Añadimos ArrowLeft
 import { Link } from "react-router-dom"; // Necesario para navegar
 import { NavBarDefault } from "../components/home/NavBarDefault";
 
@@ -8,7 +8,7 @@ export function Especialistas() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/medicos")
+    fetch("http://localhost:8080/api/medicos/publicos")
       .then((res) => res.json())
       .then((data) => {
         setMedicos(data);
@@ -64,16 +64,16 @@ export function Especialistas() {
                         <div className="h-48 w-48 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                           <img
                             src={medico.urlFoto}
-                            alt={medico.nombreUsuario}
+                            alt={medico.nombre}
                             className="h-48 w-48 rounded-full object-cover"
                           />
                         </div>
                         <div className="ml-4">
                           <h3 className="text-4xl font-bold text-gray-900">
-                            {medico.nombreUsuario}
+                            {medico.nombre}
                           </h3>
                           <p className="text-blue-600 font-medium text-xl">
-                            {medico.nombreEspecialidad}
+                            {medico.especialidad}
                           </p>
                         </div>
                       </div>

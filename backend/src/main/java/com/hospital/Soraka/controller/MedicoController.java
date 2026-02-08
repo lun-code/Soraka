@@ -2,6 +2,7 @@ package com.hospital.Soraka.controller;
 
 import com.hospital.Soraka.dto.medico.MedicoPatchDTO;
 import com.hospital.Soraka.dto.medico.MedicoPostDTO;
+import com.hospital.Soraka.dto.medico.MedicoPublicoDTO;
 import com.hospital.Soraka.dto.medico.MedicoResponseDTO;
 import com.hospital.Soraka.service.MedicoService;
 import jakarta.validation.Valid;
@@ -36,8 +37,14 @@ public class MedicoController {
      * @return Lista de {@link MedicoResponseDTO} con la información de cada médico.
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     public List<MedicoResponseDTO> getMedicos() {
         return medicoService.getMedicos();
+    }
+
+    @GetMapping("/publicos")
+    public List<MedicoPublicoDTO> getMedicosPublicos() {
+        return medicoService.getMedicosPublico();
     }
 
     /**

@@ -2,6 +2,7 @@ package com.hospital.Soraka.service;
 
 import com.hospital.Soraka.dto.medico.MedicoPatchDTO;
 import com.hospital.Soraka.dto.medico.MedicoPostDTO;
+import com.hospital.Soraka.dto.medico.MedicoPublicoDTO;
 import com.hospital.Soraka.dto.medico.MedicoResponseDTO;
 import com.hospital.Soraka.entity.Especialidad;
 import com.hospital.Soraka.entity.Medico;
@@ -51,6 +52,13 @@ public class MedicoService {
         return medicoRepository.findAll()
                 .stream()
                 .map(this::buildResponse)
+                .toList();
+    }
+
+    public List<MedicoPublicoDTO>  getMedicosPublico() {
+        return medicoRepository.findAll()
+                .stream()
+                .map(this::buildResponsePublico)
                 .toList();
     }
 
@@ -175,6 +183,15 @@ public class MedicoService {
                 m.getUsuario().getNombre(),
                 m.getUsuario().getEmail(),
                 m.getEspecialidad().getId(),
+                m.getEspecialidad().getNombre(),
+                m.getUrlFoto()
+        );
+    }
+
+    private MedicoPublicoDTO buildResponsePublico(Medico m) {
+        return new MedicoPublicoDTO(
+                m.getId(),
+                m.getUsuario().getNombre(),
                 m.getEspecialidad().getNombre(),
                 m.getUrlFoto()
         );

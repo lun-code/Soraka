@@ -19,6 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/usuarios")
+@CrossOrigin(origins = "http://localhost:5173")
 public class UsuarioController {
 
     @Autowired
@@ -34,6 +35,12 @@ public class UsuarioController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public List<UsuarioResponseDTO> getUsuarios() {
         return usuarioService.getUsuarios();
+    }
+
+
+    @GetMapping("/publico")
+    public List<UsuarioPublicoDTO> getUsuariosPublico() {
+        return usuarioService.getUsuariosPublico();
     }
 
     /**

@@ -63,6 +63,13 @@ public class UsuarioService {
                 .toList();
     }
 
+    public List<UsuarioPublicoDTO> getUsuariosPublico() {
+        return usuarioRepository.findAllByRol(Rol.PACIENTE)
+                .stream()
+                .map(this::buildResponsePublico)
+                .toList();
+    }
+
     /**
      * Obtiene un usuario por su ID.
      *
@@ -199,6 +206,12 @@ public class UsuarioService {
                 u.getRol(),
                 u.isActivo(),
                 u.getFechaRegistro()
+        );
+    }
+
+    private UsuarioPublicoDTO buildResponsePublico(Usuario u) {
+        return new UsuarioPublicoDTO(
+                u.getId()
         );
     }
 }

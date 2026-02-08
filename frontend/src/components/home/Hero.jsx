@@ -1,8 +1,47 @@
 import { Shield, Clock, User, ArrowRight } from "lucide-react"; // Iconos limpios
 import clinica from "../../assets/clinica.png";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 export function Hero() {
+
+  const [medicos, setMedicos] = useState([]);
+  const [especialidades, setEspecialidades] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/medicos/publicos")
+      .then((res) => res.json())
+      .then((data) => {
+        setMedicos(data)
+      })
+      .catch((err) => {
+        console.log("Error cargando médicos:", err);
+      })
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/especialidades")
+      .then((res) => res.json())
+      .then((data) => {
+        setEspecialidades(data)
+      })
+      .catch((err) => {
+        console.log("Error cargando especialidades: ", err)
+      })
+  }, []);
+
+    useEffect(() => {
+    fetch("http://localhost:8080/api/usuarios/publico")
+      .then((res) => res.json())
+      .then((data) => {
+        setUsuarios(data)
+      })
+      .catch((err) => {
+        console.log("Error cargando usuarios: ", err)
+      })
+  }, []);
+
   return (
     <div className="bg-white">
       {/* 1. SECCIÓN HERO */}
@@ -90,26 +129,20 @@ export function Hero() {
 
       {/* 3. SECCIÓN DE ESTADÍSTICAS RÁPIDAS */}
       <section className="bg-blue-900 py-12 text-white">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-3 gap-8 text-center">
           <div>
-            <div className="text-4xl font-bold">+15k</div>
+            <div className="text-4xl font-bold">{usuarios.length}</div>
             <div className="text-blue-200 uppercase text-sm mt-2">
               Pacientes Felices
             </div>
           </div>
           <div>
-            <div className="text-4xl font-bold">50+</div>
+            <div className="text-4xl font-bold">{medicos.length}</div>
             <div className="text-blue-200 uppercase text-sm mt-2">Médicos</div>
           </div>
           <div>
-            <div className="text-4xl font-bold">12</div>
-            <div className="text-blue-200 uppercase text-sm mt-2">Clínicas</div>
-          </div>
-          <div>
-            <div className="text-4xl font-bold">4.9/5</div>
-            <div className="text-blue-200 uppercase text-sm mt-2">
-              Valoración
-            </div>
+            <div className="text-4xl font-bold">{especialidades.length}</div>
+            <div className="text-blue-200 uppercase text-sm mt-2">Especialidades</div>
           </div>
         </div>
       </section>
