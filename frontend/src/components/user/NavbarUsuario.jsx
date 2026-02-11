@@ -1,6 +1,6 @@
 import logo from "../../assets/descarga.png";
 import { Link } from "react-router-dom";
-import { Home, Users, Info, Phone } from "lucide-react";
+import { Home, User, Phone, CalendarFold } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   Navbar,
@@ -14,12 +14,12 @@ function NavList() {
   const navItems = [
     { name: "Inicio", path: "/", icon: <Home size={18} /> },
     {
-      name: "Especialistas",
-      path: "/especialistas",
-      icon: <Users size={18} />,
+      name: "Mis citas",
+      path: "/mis-citas",
+      icon: <CalendarFold size={18} />,
     },
-    { name: "Sobre Nosotros", path: "#", icon: <Info size={18} /> },
-    { name: "Contacto", path: "#", icon: <Phone size={18} /> },
+    { name: "Mi perfil", path: "/mi-perfil", icon: <User size={18} /> },
+    { name: "Contacto", path: "/contacto", icon: <Phone size={18} /> },
   ];
 
   return (
@@ -42,7 +42,7 @@ function NavList() {
   );
 }
 
-export function NavBarDefault() {
+export function NavbarUsuario() {
   const [openNav, setOpenNav] = useState(false);
 
   useEffect(() => {
@@ -84,10 +84,10 @@ export function NavBarDefault() {
               <Button
                 variant="gradient"
                 size="lg" // Cambiado de sm a lg
-                color="white"
-                className="hidden lg:inline-block px-10 py-3 text-[#172554] text-base font-bold shadow-xl hover:scale-105 transition-transform"
+                color="pink"
+                className="hidden lg:inline-block px-10 py-3 text-gray-200 text-base shadow-xl hover:scale-105 transition-transform"
               >
-                <span>Iniciar sesión</span>
+                <span>Cerrar sesión</span>
               </Button>
             </Link>
           </div>

@@ -39,8 +39,8 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-cyan-400 transition-colors">
-                  Especialidades
+                <a href="/especialistas" className="hover:text-cyan-400 transition-colors">
+                  Especialistas
                 </a>
               </li>
               <li>

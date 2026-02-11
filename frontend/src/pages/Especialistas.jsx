@@ -23,7 +23,7 @@ export function Especialistas() {
   return (
     <>
       <NavBarDefault />
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen bg-blue-gray-50 py-12">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Botón de Volver */}
           <div className="mb-8">
