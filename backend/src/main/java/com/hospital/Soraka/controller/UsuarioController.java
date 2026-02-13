@@ -11,11 +11,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controlador REST que maneja operaciones sobre los usuarios del sistema.
- * Permite consultar, modificar y eliminar usuarios según los permisos definidos.
+ * Controlador REST que gestiona operaciones sobre los usuarios del sistema.
+ *
  * <p>
+ * Permite consultar, modificar y eliminar usuarios según los permisos definidos.
  * Las operaciones sensibles como creación, actualización y eliminación están
- * restringidas a usuarios con los roles adecuados (ej. ADMIN).
+ * restringidas a usuarios con roles específicos, típicamente ADMIN.
  */
 @RestController
 @RequestMapping("/api/usuarios")
@@ -26,10 +27,11 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     /**
-     * Obtiene la lista de todos los usuarios.
+     * Obtiene la lista completa de usuarios.
+     * <p>
      * Solo accesible para administradores.
      *
-     * @return Lista de UsuarioResponseDTO con información de cada usuario.
+     * @return Lista de {@link UsuarioResponseDTO} con información completa de cada usuario.
      */
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -37,7 +39,11 @@ public class UsuarioController {
         return usuarioService.getUsuarios();
     }
 
-
+    /**
+     * Obtiene la lista de usuarios públicos (rol PACIENTE) para uso externo.
+     *
+     * @return Lista de {@link UsuarioPublicoDTO} con información limitada de cada usuario.
+     */
     @GetMapping("/publico")
     public List<UsuarioPublicoDTO> getUsuariosPublico() {
         return usuarioService.getUsuariosPublico();
@@ -45,10 +51,11 @@ public class UsuarioController {
 
     /**
      * Obtiene un usuario específico por su ID.
-     * Acceso permitido a administradores o al propio usuario.
+     * <p>
+     * Accesible para administradores o el propio usuario.
      *
      * @param id ID del usuario a consultar.
-     * @return UsuarioResponseDTO con la información del usuario.
+     * @return {@link UsuarioResponseDTO} con información completa del usuario.
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN') or #id == principal.id")
@@ -58,24 +65,28 @@ public class UsuarioController {
 
     /**
      * Elimina un usuario por su ID.
+     * <p>
      * Solo accesible para administradores.
      *
      * @param id ID del usuario a eliminar.
+     * @return {@link ResponseEntity} con estado 204 No Content si la eliminación es exitosa.
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deleteUsuario(@PathVariable Long id){
         usuarioService.deleteUsuario(id);
-        return ResponseEntity.noContent().build(); // 204 No Content
+        return ResponseEntity.noContent().build();
     }
 
     /**
-     * Modifica un usuario existente.
+     * Actualiza parcialmente un usuario existente.
+     * <p>
      * Solo accesible para administradores.
+     * Aplica validaciones de negocio definidas en {@link com.hospital.Soraka.service.UsuarioService}.
      *
-     * @param usuarioDTO DTO con los campos a actualizar.
+     * @param usuarioDTO DTO con los campos parciales a actualizar.
      * @param id ID del usuario a modificar.
-     * @return UsuarioResponseDTO con los datos actualizados del usuario.
+     * @return {@link UsuarioResponseDTO} con los datos actualizados del usuario.
      */
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")

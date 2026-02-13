@@ -4,24 +4,34 @@ import { Home } from "./pages/Home"
 import { Login } from "./pages/Login"
 import { Especialistas } from './pages/Especialistas';
 import { DashboardUsuario } from './pages/user/DashboardUsuario';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
 
   return (
     <BrowserRouter>
-      <div className='min-h-screen bg-blue-gray-50'>
-        <Routes>
+      <AuthProvider>
+        <div className='min-h-screen bg-blue-gray-50'>
+          <Routes>
 
-          <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home />} />
 
-          <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Login />} />
 
-          <Route path="/especialistas" element={<Especialistas />} />
-          
-          <Route path='/DashboardUsuario' element={<DashboardUsuario />} />
-          
-        </Routes>
-      </div>
+            <Route path="/especialistas" element={<Especialistas />} />
+            
+            <Route 
+              path='/dashboard'
+              element={
+                <ProtectedRoute allowedRoles={["PACIENTE"]}>
+                  <DashboardUsuario />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

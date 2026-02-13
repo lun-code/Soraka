@@ -4,6 +4,7 @@ import com.hospital.Soraka.dto.login.LoginRequestDTO;
 import com.hospital.Soraka.dto.login.LoginResponseDTO;
 import com.hospital.Soraka.dto.usuario.UsuarioPostDTO;
 import com.hospital.Soraka.dto.usuario.UsuarioResponseDTO;
+import com.hospital.Soraka.entity.Usuario;
 import com.hospital.Soraka.service.ConfirmacionService;
 import com.hospital.Soraka.service.UsuarioService;
 import com.hospital.Soraka.security.JwtService;
@@ -15,21 +16,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Controlador REST encargado de la autenticación y registro de usuarios.
  * <p>
- * Este controlador expone endpoints para:
+ * Proporciona endpoints para:
  * <ul>
- *     <li>Login de usuarios y emisión de tokens JWT.</li>
- *     <li>Registro de nuevos usuarios (solo ADMIN).</li>
- *     <li>Confirmación de cuenta mediante token enviado por email.</li>
+ *     <li>Iniciar sesión de usuarios y generar tokens JWT.</li>
+ *     <li>Registrar nuevos usuarios (acceso exclusivo para ADMIN).</li>
+ *     <li>Confirmar cuentas mediante tokens enviados por correo electrónico.</li>
  * </ul>
- *
- * Se integra con Spring Security y JWT para proteger los endpoints según el rol del usuario
+ * <p>
+ * Integra Spring Security y JWT para proteger los endpoints según el rol del usuario
  * y el estado de la cuenta.
  */
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -38,12 +43,12 @@ public class AuthController {
     private final ConfirmacionService confirmacionService;
 
     /**
-     * Constructor con inyección de dependencias.
+     * Constructor con inyección de dependencias para los servicios y componentes de seguridad.
      *
-     * @param authenticationManager Bean de Spring Security para autenticar credenciales.
-     * @param jwtService Servicio para generar y validar tokens JWT.
-     * @param usuarioService Servicio que maneja la creación de usuarios.
-     * @param confirmacionService Servicio que maneja la confirmación de cuentas por email.
+     * @param authenticationManager Componente de Spring Security para autenticar credenciales.
+     * @param jwtService Servicio para la generación y validación de tokens JWT.
+     * @param usuarioService Servicio encargado de la creación y manejo de usuarios.
+     * @param confirmacionService Servicio encargado de la confirmación de cuentas por correo electrónico.
      */
     public AuthController(AuthenticationManager authenticationManager,
                           JwtService jwtService,
@@ -56,15 +61,15 @@ public class AuthController {
     }
 
     /**
-     * Endpoint para login de usuarios.
+     * Endpoint para el inicio de sesión de usuarios.
      * <p>
-     * Recibe un DTO con email y contraseña, autentica al usuario usando Spring Security
-     * y devuelve un JWT si la autenticación es exitosa.
+     * Recibe un {@link LoginRequestDTO} con el email y la contraseña del usuario,
+     * autentica mediante Spring Security y devuelve un token JWT en caso de éxito.
      *
      * @param dto DTO con email y contraseña del usuario.
-     * @return LoginResponseDTO que contiene el token JWT.
+     * @return {@link LoginResponseDTO} que contiene el token JWT generado.
      * @throws org.springframework.security.core.AuthenticationException si las credenciales son inválidas
-     * o la cuenta no está activada (isActivo = false).
+     * o la cuenta está desactivada (isActivo = false).
      */
     @PostMapping("/login")
     public LoginResponseDTO login(@RequestBody LoginRequestDTO dto) {
@@ -73,7 +78,13 @@ public class AuthController {
         );
 
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
-        String token = jwtService.generateToken(userDetails);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("nombre", ((Usuario) userDetails).getNombre());
+        claims.put("rol", ((Usuario) userDetails).getRol());
+        claims.put("Email", ((Usuario) userDetails).getEmail());
+
+        String token = jwtService.generateToken(userDetails, claims);
 
         return new LoginResponseDTO(token);
     }
@@ -81,15 +92,15 @@ public class AuthController {
     /**
      * Endpoint para registrar un nuevo usuario.
      * <p>
-     * Solo accesible para usuarios con rol ADMIN.
-     * Delegará la creación del usuario al {@link UsuarioService}, que validará
-     * que el email sea único y persistirá el usuario en la base de datos.
+     * Solo accesible para usuarios con rol ADMIN. Delegará la creación del usuario
+     * al {@link UsuarioService}, que validará la unicidad del email y persistirá
+     * la información en la base de datos.
      * <p>
-     * La cuenta se crea inactiva (isActivo = false) y se debe activar
-     * mediante el token enviado por email.
+     * La cuenta se crea inicialmente inactiva (isActivo = false) y debe ser activada
+     * mediante el token enviado por correo electrónico.
      *
      * @param dto DTO con los datos del usuario a registrar.
-     * @return UsuarioResponseDTO con los datos del usuario creado.
+     * @return {@link UsuarioResponseDTO} con la información del usuario creado.
      * @throws com.hospital.Soraka.exception.Usuario.EmailYaEnUsoException si el email ya está registrado.
      */
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -99,14 +110,14 @@ public class AuthController {
     }
 
     /**
-     * Endpoint público para confirmar la cuenta de un usuario mediante token.
+     * Endpoint público para confirmar la cuenta de un usuario mediante un token.
      * <p>
-     * El usuario hace clic en el enlace enviado por email, que incluye el token único.
-     * El servicio {@link ConfirmacionService} valida el token y activa la cuenta
+     * El usuario hace clic en un enlace enviado por correo electrónico, que incluye
+     * un token único. {@link ConfirmacionService} valida el token y activa la cuenta
      * (isActivo = true) si el token es válido y no ha expirado.
      *
-     * @param token Token de confirmación enviado por email.
-     * @return ResponseEntity con mensaje de éxito si la cuenta se activó correctamente.
+     * @param token Token de confirmación enviado por correo electrónico.
+     * @return {@link ResponseEntity} con mensaje de éxito si la cuenta fue activada correctamente.
      * @throws RuntimeException si el token no existe o ha expirado.
      */
     @GetMapping("/confirmar")

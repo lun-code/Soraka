@@ -21,13 +21,22 @@ import java.util.UUID;
 
 /**
  * Servicio de dominio encargado de la gestión de usuarios del sistema.
- *
  * <p>
- * Contiene operaciones de consulta, creación, actualización parcial y eliminación.
+ * Proporciona operaciones de:
+ * <ul>
+ *     <li>Listado de usuarios completos y públicos.</li>
+ *     <li>Consulta individual por ID.</li>
+ *     <li>Creación de nuevos usuarios con envío de correo de confirmación.</li>
+ *     <li>Actualización parcial de usuarios existentes.</li>
+ *     <li>Eliminación de usuarios.</li>
+ * </ul>
+ * <p>
  * La seguridad basada en roles debe aplicarse desde el controller mediante {@code @PreAuthorize}.
- * Este service valida únicamente la existencia de entidades y reglas de negocio:
- * - Unicidad de email
- * - Restricciones al cambio de rol para usuarios MEDICO con entidad asociada
+ * Este servicio valida únicamente la existencia de entidades y reglas de negocio:
+ * <ul>
+ *     <li>Unicidad de email.</li>
+ *     <li>Restricciones al cambio de rol para usuarios MEDICO con entidad asociada.</li>
+ * </ul>
  */
 @Service
 @Transactional
@@ -49,12 +58,11 @@ public class UsuarioService {
     private PasswordEncoder passwordEncoder;
 
     /**
-     * Obtiene el listado completo de usuarios registrados.
-     *
+     * Obtiene todos los usuarios registrados en el sistema.
      * <p>
-     * Solo un administrador debería llamar a este método desde el controller.
+     * Solo administradores deberían invocar este método desde el controller.
      *
-     * @return lista de {@link UsuarioResponseDTO} con los datos de cada usuario.
+     * @return Lista de {@link UsuarioResponseDTO} con los datos completos de cada usuario.
      */
     public List<UsuarioResponseDTO> getUsuarios() {
         return usuarioRepository.findAll()
@@ -63,6 +71,11 @@ public class UsuarioService {
                 .toList();
     }
 
+    /**
+     * Obtiene todos los usuarios de rol PACIENTE para uso público.
+     *
+     * @return Lista de {@link UsuarioPublicoDTO} con información limitada de cada usuario.
+     */
     public List<UsuarioPublicoDTO> getUsuariosPublico() {
         return usuarioRepository.findAllByRol(Rol.PACIENTE)
                 .stream()
@@ -72,13 +85,12 @@ public class UsuarioService {
 
     /**
      * Obtiene un usuario por su ID.
-     *
      * <p>
-     * Solo administradores o el propio usuario deberían llamar a este método desde el controller.
+     * Solo administradores o el propio usuario deberían invocar este método desde el controller.
      *
-     * @param id identificador del usuario
-     * @return {@link UsuarioResponseDTO} con los datos del usuario
-     * @throws UsuarioNotFoundException si no existe un usuario con el ID indicado
+     * @param id Identificador del usuario.
+     * @return {@link UsuarioResponseDTO} con los datos completos del usuario.
+     * @throws UsuarioNotFoundException si no existe un usuario con el ID indicado.
      */
     public UsuarioResponseDTO getUsuarioById(Long id){
         Usuario usuario = usuarioRepository.findById(id)
@@ -88,23 +100,23 @@ public class UsuarioService {
 
     /**
      * Crea un nuevo usuario en el sistema y envía un correo de confirmación.
-     *
-     * <p>El flujo completo es el siguiente:</p>
+     * <p>
+     * Flujo completo:
      * <ol>
-     *     <li>Se valida que el email no esté en uso; si lo está, lanza {@link EmailYaEnUsoException}.</li>
-     *     <li>Se crea la entidad {@link Usuario} con la contraseña cifrada mediante {@link PasswordEncoder}.</li>
-     *     <li>Se establece explícitamente {@code isActivo = false}, dejando la cuenta inactiva hasta confirmar el email.</li>
-     *     <li>Se guarda el usuario en la base de datos.</li>
-     *     <li>Se genera un token único {@link java.util.UUID} para la confirmación de la cuenta.</li>
-     *     <li>Se crea y persiste un {@link com.hospital.Soraka.entity.TokenConfirmacion} asociado al usuario, con fecha de expiración de 24 horas.</li>
-     *     <li>Se envía un email de confirmación al usuario mediante {@link EmailService#enviarEmailConfirmacion(String, String)}.</li>
+     *     <li>Valida que el email no esté en uso; lanza {@link EmailYaEnUsoException} si corresponde.</li>
+     *     <li>Crea la entidad {@link Usuario} con la contraseña cifrada mediante {@link PasswordEncoder}.</li>
+     *     <li>Establece {@code isActivo = false} hasta confirmar el email.</li>
+     *     <li>Guarda el usuario en la base de datos.</li>
+     *     <li>Genera un token único {@link UUID} para la confirmación de cuenta.</li>
+     *     <li>Crea y persiste un {@link TokenConfirmacion} asociado al usuario, con expiración de 24 horas.</li>
+     *     <li>Envía un correo de confirmación mediante {@link EmailService#enviarEmailConfirmacion(String, String)}.</li>
      * </ol>
-     *
-     * <p>Este método <b>solo debe ser invocado por un administrador</b> desde el controller.</p>
+     * <p>
+     * Solo administradores deberían invocar este método desde el controller.
      *
      * @param usuarioDTO DTO con los datos necesarios para crear el usuario.
-     * @return {@link UsuarioResponseDTO} con la información del usuario recién creado.
-     * @throws EmailYaEnUsoException si el email proporcionado ya está registrado en el sistema.
+     * @return {@link UsuarioResponseDTO} con los datos del usuario creado.
+     * @throws EmailYaEnUsoException si el email proporcionado ya está registrado.
      */
     public UsuarioResponseDTO createUsuario(UsuarioPostDTO usuarioDTO){
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -118,7 +130,7 @@ public class UsuarioService {
                 usuarioDTO.getRol()
         );
 
-        nuevo.setActivo(false); // <- Explícito
+        nuevo.setActivo(false);
 
         Usuario guardado = usuarioRepository.save(nuevo);
 
@@ -137,13 +149,12 @@ public class UsuarioService {
     }
 
     /**
-     * Elimina un usuario a partir de su ID.
-     *
+     * Elimina un usuario del sistema por su ID.
      * <p>
-     * Solo un administrador debería llamar a este método desde el controller.
+     * Solo administradores deberían invocar este método desde el controller.
      *
-     * @param id identificador del usuario a eliminar
-     * @throws UsuarioNotFoundException si el usuario no existe
+     * @param id Identificador del usuario a eliminar.
+     * @throws UsuarioNotFoundException si el usuario no existe.
      */
     public void deleteUsuario(Long id){
         if(!usuarioRepository.existsById(id)){
@@ -154,19 +165,20 @@ public class UsuarioService {
 
     /**
      * Actualiza parcialmente los datos de un usuario existente.
-     *
      * <p>
-     * Solo un administrador debería llamar a este método desde el controller.
-     * Se aplican validaciones de negocio:
-     * - Unicidad de email
-     * - No se puede cambiar el rol de un usuario MEDICO con entidad asociada
+     * Solo administradores deberían invocar este método desde el controller.
+     * Valida reglas de negocio:
+     * <ul>
+     *     <li>Unicidad de email.</li>
+     *     <li>No permite cambiar el rol de un usuario MEDICO con entidad asociada.</li>
+     * </ul>
      *
-     * @param id identificador del usuario a modificar
-     * @param usuarioDTO DTO con los campos parciales a actualizar
-     * @return {@link UsuarioResponseDTO} con los datos actualizados
-     * @throws UsuarioNotFoundException si el usuario no existe
-     * @throws EmailYaEnUsoException si el email ya está en uso
-     * @throws CambioRolMedicoNoPermitidoException se intenta cambiar el rol de un Usuario con entidad Médico asociada
+     * @param id Identificador del usuario a modificar.
+     * @param usuarioDTO DTO con los campos parciales a actualizar.
+     * @return {@link UsuarioResponseDTO} con los datos actualizados del usuario.
+     * @throws UsuarioNotFoundException si el usuario no existe.
+     * @throws EmailYaEnUsoException si el email ya está en uso.
+     * @throws CambioRolMedicoNoPermitidoException si se intenta cambiar el rol de un usuario MEDICO con entidad asociada.
      */
     public UsuarioResponseDTO patchUsuario(Long id, UsuarioPatchDTO usuarioDTO){
         Usuario existente = usuarioRepository.findById(id)
@@ -193,10 +205,10 @@ public class UsuarioService {
     }
 
     /**
-     * Construye un DTO de respuesta a partir de la entidad {@link Usuario}.
+     * Construye un DTO de respuesta completo a partir de la entidad {@link Usuario}.
      *
-     * @param u entidad usuario
-     * @return {@link UsuarioResponseDTO} con los datos públicos del usuario
+     * @param u Entidad {@link Usuario}.
+     * @return {@link UsuarioResponseDTO} con los datos completos del usuario.
      */
     private UsuarioResponseDTO buildResponse(Usuario u) {
         return new UsuarioResponseDTO(
@@ -209,6 +221,12 @@ public class UsuarioService {
         );
     }
 
+    /**
+     * Construye un DTO de respuesta pública a partir de la entidad {@link Usuario}.
+     *
+     * @param u Entidad {@link Usuario}.
+     * @return {@link UsuarioPublicoDTO} con los datos limitados para uso público.
+     */
     private UsuarioPublicoDTO buildResponsePublico(Usuario u) {
         return new UsuarioPublicoDTO(
                 u.getId()

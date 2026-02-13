@@ -24,11 +24,18 @@ import java.util.List;
 
 /**
  * Servicio de dominio para la gestión de médicos.
- *
  * <p>
- * Contiene operaciones de listado, consulta, creación, actualización parcial y eliminación.
+ * Proporciona operaciones de:
+ * <ul>
+ *     <li>Listado de médicos.</li>
+ *     <li>Consulta individual por ID.</li>
+ *     <li>Creación de nuevos médicos.</li>
+ *     <li>Actualización parcial de médicos existentes.</li>
+ *     <li>Eliminación de médicos.</li>
+ * </ul>
+ * <p>
  * La seguridad basada en roles debe aplicarse en el controller mediante {@code @PreAuthorize}.
- * Este service valida únicamente la existencia de entidades y reglas de negocio.
+ * Este servicio valida únicamente la existencia de entidades y las reglas de negocio relacionadas.
  */
 @Service
 @Transactional
@@ -46,7 +53,7 @@ public class MedicoService {
     /**
      * Obtiene todos los médicos registrados en el sistema.
      *
-     * @return lista de {@link MedicoResponseDTO} con la información de cada médico.
+     * @return Lista de {@link MedicoResponseDTO} con la información de cada médico.
      */
     public List<MedicoResponseDTO> getMedicos() {
         return medicoRepository.findAll()
@@ -55,7 +62,12 @@ public class MedicoService {
                 .toList();
     }
 
-    public List<MedicoPublicoDTO>  getMedicosPublico() {
+    /**
+     * Obtiene todos los médicos para uso público, con información limitada.
+     *
+     * @return Lista de {@link MedicoPublicoDTO} con datos públicos de cada médico.
+     */
+    public List<MedicoPublicoDTO> getMedicosPublico() {
         return medicoRepository.findAll()
                 .stream()
                 .map(this::buildResponsePublico)
@@ -65,9 +77,9 @@ public class MedicoService {
     /**
      * Obtiene un médico a partir de su ID.
      *
-     * @param id identificador del médico
-     * @return {@link MedicoResponseDTO} con los datos del médico
-     * @throws MedicoNotFoundException si no existe un médico con el ID indicado
+     * @param id Identificador del médico.
+     * @return {@link MedicoResponseDTO} con los datos completos del médico.
+     * @throws MedicoNotFoundException si no existe un médico con el ID indicado.
      */
     public MedicoResponseDTO getMedicoById(Long id){
         Medico medico = medicoRepository.findById(id)
@@ -78,16 +90,15 @@ public class MedicoService {
 
     /**
      * Crea un nuevo médico en el sistema.
-     *
      * <p>
-     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
+     * Solo usuarios con rol ADMIN deberían invocar este método desde el controller.
      *
-     * @param medico DTO con los datos necesarios para la creación del médico.
-     * @return {@link MedicoResponseDTO} con el médico creado.
-     * @throws UsuarioNotFoundException si el usuario no existe
-     * @throws EspecialidadNotFoundException si la especialidad no existe
-     * @throws RolNoValidoException si el usuario no tiene rol MEDICO
-     * @throws MedicoExisteException si el usuario ya está asignado a otro médico
+     * @param medico DTO con los datos necesarios para la creación.
+     * @return {@link MedicoResponseDTO} con los datos del médico creado.
+     * @throws UsuarioNotFoundException si el usuario no existe.
+     * @throws EspecialidadNotFoundException si la especialidad no existe.
+     * @throws RolNoValidoException si el usuario no tiene rol MEDICO.
+     * @throws MedicoExisteException si el usuario ya está asignado a otro médico.
      */
     public MedicoResponseDTO createMedico(MedicoPostDTO medico) {
         Usuario usuario = usuarioRepository.findById(medico.getUsuarioId())
@@ -111,12 +122,11 @@ public class MedicoService {
 
     /**
      * Elimina un médico del sistema a partir de su ID.
-     *
      * <p>
-     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
+     * Solo usuarios con rol ADMIN deberían invocar este método desde el controller.
      *
-     * @param id identificador del médico a eliminar
-     * @throws MedicoNotFoundException si el médico no existe
+     * @param id Identificador del médico a eliminar.
+     * @throws MedicoNotFoundException si el médico no existe.
      */
     public void deleteMedico(Long id){
         if(!medicoRepository.existsById(id)){
@@ -127,18 +137,17 @@ public class MedicoService {
 
     /**
      * Actualiza parcialmente un médico existente.
-     *
      * <p>
-     * Solo un usuario con rol ADMIN debería llamar a este método desde el controller.
+     * Solo usuarios con rol ADMIN deberían invocar este método desde el controller.
      *
-     * @param id identificador del médico a modificar
-     * @param medicoDTO DTO con los campos parciales a actualizar
-     * @return {@link MedicoResponseDTO} con el médico actualizado
-     * @throws MedicoNotFoundException si el médico no existe
-     * @throws EspecialidadNotFoundException si la especialidad no existe
-     * @throws UsuarioNotFoundException si el usuario no existe
-     * @throws RolNoValidoException si el usuario no tiene rol MEDICO
-     * @throws MedicoExisteException si el usuario ya está asignado a otro médico
+     * @param id Identificador del médico a modificar.
+     * @param medicoDTO DTO con los campos parciales a actualizar.
+     * @return {@link MedicoResponseDTO} con los datos actualizados del médico.
+     * @throws MedicoNotFoundException si el médico no existe.
+     * @throws EspecialidadNotFoundException si la especialidad indicada no existe.
+     * @throws UsuarioNotFoundException si el usuario indicado no existe.
+     * @throws RolNoValidoException si el usuario no tiene rol MEDICO.
+     * @throws MedicoExisteException si el usuario ya está asignado a otro médico.
      */
     public MedicoResponseDTO patchMedico(Long id, MedicoPatchDTO medicoDTO){
         Medico existente = medicoRepository.findById(id)
@@ -171,10 +180,10 @@ public class MedicoService {
     }
 
     /**
-     * Construye un DTO de respuesta a partir de la entidad {@link Medico}.
+     * Construye un DTO de respuesta completo a partir de la entidad {@link Medico}.
      *
-     * @param m entidad médico
-     * @return {@link MedicoResponseDTO} con los datos del médico, usuario y especialidad
+     * @param m Entidad {@link Medico}.
+     * @return {@link MedicoResponseDTO} con los datos completos del médico, usuario y especialidad.
      */
     private MedicoResponseDTO buildResponse(Medico m) {
         return new MedicoResponseDTO(
@@ -188,6 +197,12 @@ public class MedicoService {
         );
     }
 
+    /**
+     * Construye un DTO de respuesta pública a partir de la entidad {@link Medico}.
+     *
+     * @param m Entidad {@link Medico}.
+     * @return {@link MedicoPublicoDTO} con los datos públicos del médico.
+     */
     private MedicoPublicoDTO buildResponsePublico(Medico m) {
         return new MedicoPublicoDTO(
                 m.getId(),

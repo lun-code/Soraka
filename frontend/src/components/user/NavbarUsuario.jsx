@@ -1,7 +1,8 @@
 import logo from "../../assets/descarga.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Home, User, Phone, CalendarFold } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   Navbar,
   Collapse,
@@ -44,6 +45,13 @@ function NavList() {
 
 export function NavbarUsuario() {
   const [openNav, setOpenNav] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/", { replace: true });
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -58,7 +66,6 @@ export function NavbarUsuario() {
     <div className="w-full">
       <Navbar className="w-full max-w-full rounded-none border-none bg-[#172554] bg-opacity-100 py-0 lg:h-28">
         <div className="flex h-full items-center justify-between text-white">
-          {/* LOGO: Aumentado de tamaño */}
           <Link to="/" className="cursor-pointer">
             <div className="flex items-center gap-4">
               <img
@@ -67,7 +74,6 @@ export function NavbarUsuario() {
                 className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto shrink-0 rounded-full border-2 border-white/20 shadow-sm"
                 loading="lazy"
               />
-              {/* Opcional: Nombre de la clínica al lado del logo */}
               <span className="text-2xl font-bold hidden sm:block tracking-tight">
                 Clínica Virtual
               </span>
@@ -78,21 +84,18 @@ export function NavbarUsuario() {
             <NavList />
           </div>
 
-          {/* BOTÓN LOGIN: Más grande y con mejor fuente */}
           <div className="flex items-center gap-x-1">
-            <Link to="/login">
               <Button
                 variant="gradient"
-                size="lg" // Cambiado de sm a lg
+                size="lg"
                 color="pink"
                 className="hidden lg:inline-block px-10 py-3 text-gray-200 text-base shadow-xl hover:scale-105 transition-transform"
+                onClick={handleLogout}
               >
                 <span>Cerrar sesión</span>
               </Button>
-            </Link>
           </div>
 
-          {/* Icono menú móvil aumentado */}
           <IconButton
             variant="text"
             className="ml-auto h-10 w-10 text-white hover:bg-white/10 lg:hidden"
@@ -135,18 +138,16 @@ export function NavbarUsuario() {
         {/* Menú móvil ajustado */}
         <Collapse open={openNav} className="bg-[#172554] px-4">
           <NavList />
-          
-          <Link to="/login">
             <Button
               fullWidth
               variant="gradient"
               size="lg"
               className="mt-4 text-[#172554] font-bold"
               color="white"
+              onClick={handleLogout}
             >
-              Iniciar sesión
+              Cerrar sesión
             </Button>
-          </Link>
         </Collapse>
       </Navbar>
     </div>

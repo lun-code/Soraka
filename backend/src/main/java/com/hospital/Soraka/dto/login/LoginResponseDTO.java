@@ -5,7 +5,6 @@ public class LoginResponseDTO {
     // ATRIBUTOS
     private String token;
 
-
     // CONSTRUCTORES
     public LoginResponseDTO(String token) {
         this.token = token;

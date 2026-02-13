@@ -5,15 +5,16 @@ import { TablaCitasDisponibles } from "../../components/user/TablaCitasDisponibl
 import { NavbarUsuario } from "../../components/user/NavbarUsuario";
 
 export function DashboardUsuario() {
-  const [especialidadSeleccionada, setEspecialidadSeleccionada] =
-    useState(null);
+  const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(null);
+
+  
 
   return (
     <div>
       <NavbarUsuario />
 
       <main className="max-w-5xl mx-auto px-6 py-10">
-        <SaludoUsuario nombre="Juan" />
+        <SaludoUsuario />
 
         <SelectorEspecialidad
           value={especialidadSeleccionada}
