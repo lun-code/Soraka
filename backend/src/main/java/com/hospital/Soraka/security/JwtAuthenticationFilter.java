@@ -16,8 +16,17 @@ import java.io.IOException;
 
 /**
  * Filtro que intercepta cada request HTTP para validar el token JWT.
- * Se ejecuta una vez por request (OncePerRequestFilter) y establece
- * la autenticación en el contexto de seguridad de Spring.
+ * <p>
+ * Este filtro se ejecuta una vez por request (hereda de OncePerRequestFilter)
+ * y se encarga de:
+ * <ul>
+ *     <li>Extraer el JWT del header Authorization.</li>
+ *     <li>Validar que el token sea correcto y no haya expirado.</li>
+ *     <li>Establecer la autenticación en el contexto de seguridad de Spring.</li>
+ * </ul>
+ * <p>
+ * Para rutas públicas (como login y confirmación de email),
+ * este filtro se omite mediante {@link #shouldNotFilter(HttpServletRequest)}.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -27,7 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Constructor con inyección de dependencias.
-     * @param jwtService Servicio para generar y validar tokens JWT.
+     *
+     * @param jwtService Servicio encargado de generar y validar tokens JWT.
      * @param userDetailsService Servicio para cargar usuarios desde la base de datos.
      */
     public JwtAuthenticationFilter(
@@ -39,16 +49,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Método principal del filtro que valida el JWT de cada request.
-     * * Modificaciones para robustez:
-     * 1. Captura excepciones de tokens expirados o malformados para no bloquear rutas públicas.
-     * 2. Utiliza isTokenValid para asegurar la integridad del usuario antes de autenticar.
+     * Define los endpoints que deben excluirse del filtro JWT.
+     * <p>
+     * Esto permite que rutas públicas como login, registro y confirmación
+     * no requieran un token válido para ser accedidas.
      *
-     * @param request  Request HTTP entrante
-     * @param response Response HTTP
-     * @param filterChain Cadena de filtros de Spring Security
-     * @throws ServletException cuando ocurre un error del servlet
-     * @throws IOException      cuando ocurre un error de entrada/salida
+     * @param request Request HTTP entrante.
+     * @return true si la ruta es pública y debe omitirse el filtro.
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        return path.startsWith("/auth/login")
+                || path.startsWith("/auth/confirmar");
+    }
+
+    /**
+     * Método principal del filtro que valida el JWT de cada request.
+     * <p>
+     * Pasos:
+     * <ol>
+     *     <li>Extrae el token JWT del header Authorization.</li>
+     *     <li>Si no hay token o no empieza con "Bearer ", pasa al siguiente filtro.</li>
+     *     <li>Extrae el username/email del token.</li>
+     *     <li>Si el usuario no está autenticado, lo carga de la base de datos.</li>
+     *     <li>Valida que el token sea válido y pertenece al usuario.</li>
+     *     <li>Si todo es correcto, establece la autenticación en el contexto de Spring Security.</li>
+     *     <li>Continúa con la cadena de filtros.</li>
+     * </ol>
+     *
+     * @param request      Request HTTP entrante.
+     * @param response     Response HTTP.
+     * @param filterChain  Cadena de filtros de Spring Security.
+     * @throws ServletException cuando ocurre un error del servlet.
+     * @throws IOException      cuando ocurre un error de entrada/salida.
      */
     @Override
     protected void doFilterInternal(
@@ -57,11 +91,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 1. Obtiene el header Authorization
         final String authHeader = request.getHeader("Authorization");
 
-        // 2. Si no hay header o no empieza con "Bearer ", pasamos al siguiente filtro (acceso anónimo)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // Si no hay token, dejamos pasar la request (puede ser pública)
             filterChain.doFilter(request, response);
             return;
         }
@@ -69,16 +102,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String token = authHeader.substring(7);
 
         try {
-            // 3. Extrae el username/email del token
             final String email = jwtService.extractUsername(token);
 
-            // 4. Si hay email y el usuario no está ya autenticado en el contexto
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                // Carga los detalles del usuario desde la base de datos
+                // Carga el usuario desde la base de datos
                 UserDetails user = userDetailsService.loadUserByUsername(email);
 
-                // 5. Valida que el token sea vigente y pertenezca al usuario
+                // Valida que el token sea correcto y vigente
                 if (jwtService.isTokenValid(token, user)) {
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(
@@ -92,13 +122,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            // 6. Si el token es inválido o expiró, no hacemos nada.
-            // Simplemente no se establece la autenticación.
-            // Spring Security decidirá en SecurityConfig si la ruta requiere permiso o no.
+            // Si el token es inválido o expiró, no autenticamos.
+            // Spring Security decide si la ruta requiere acceso o no.
             logger.warn("No se pudo procesar el token JWT: " + e.getMessage());
         }
 
-        // 7. Continúa con la cadena de filtros
+        // Continúa con la cadena de filtros
         filterChain.doFilter(request, response);
     }
 }

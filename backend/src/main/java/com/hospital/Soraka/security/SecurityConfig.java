@@ -17,16 +17,48 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Configuración de seguridad de Spring Security.
- * Define cifrado de contraseñas, filtros JWT y manejo de endpoints protegidos.
+ * Configuración principal de seguridad de la aplicación.
+ *
+ * <p>
+ * Define:
+ * <ul>
+ *     <li>Codificador de contraseñas.</li>
+ *     <li>Política de sesiones (stateless para JWT).</li>
+ *     <li>Reglas de autorización por endpoint.</li>
+ *     <li>Jerarquía de roles.</li>
+ *     <li>Registro del filtro JWT en la cadena de seguridad.</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ * La aplicación utiliza autenticación basada en JWT, por lo que no mantiene
+ * sesiones en el servidor.
+ * </p>
  */
 @Configuration
 public class SecurityConfig {
 
+    /** Rol con privilegios máximos dentro del sistema. */
+    public static final String ROLE_ADMIN = "ADMIN";
+
+    /** Rol correspondiente a los médicos del sistema. */
+    public static final String ROLE_MEDICO = "MEDICO";
+
+    /** Rol correspondiente a los pacientes del sistema. */
+    public static final String ROLE_PACIENTE = "PACIENTE";
+
     /**
-     * Bean para encriptar contraseñas con BCrypt.
-     * Se utiliza tanto en registro de usuarios como en validación de login.
-     * @return PasswordEncoder que aplica BCrypt hashing.
+     * Filtro encargado de validar el JWT en cada petición
+     * y establecer la autenticación en el contexto de seguridad.
+     */
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /**
+     * Define el codificador de contraseñas utilizado para
+     * almacenar y validar credenciales.
+     *
+     * @return instancia de {@link BCryptPasswordEncoder}
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -34,84 +66,83 @@ public class SecurityConfig {
     }
 
     /**
-     * Filtro JWT que intercepta cada request para validar el token.
-     * Se inyecta automáticamente con @Autowired.
-     */
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    /**
-     * Configuración de la cadena de seguridad HTTP.
-     * Define qué endpoints son públicos y cuáles requieren autenticación.
+     * Configura la cadena de filtros de seguridad.
      *
-     * @param http HttpSecurity para configurar la seguridad.
-     * @return SecurityFilterChain configurada.
-     * @throws Exception si hay error en la configuración.
+     * <p>
+     * Se desactiva CSRF por tratarse de una API stateless,
+     * se establece política de sesión sin estado y se definen
+     * las reglas de autorización por entidad y endpoint.
+     * </p>
+     *
+     * @param http configuración HTTP de Spring Security
+     * @return {@link SecurityFilterChain} configurada
+     * @throws Exception si ocurre un error durante la configuración
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // Desactiva CSRF, útil para APIs REST (no hay formularios HTML)
                 .csrf(AbstractHttpConfigurer::disable)
-                // Configura sesiones como STATELESS (sin sesión HTTP)
-                .sessionManagement(sm ->
-                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                // Define permisos de acceso a endpoints
-                .authorizeHttpRequests(auth -> auth
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> {
 
-                        // Endpoints públicos
+                    // -------------------------
+                    // ENTIDAD: AUTH
+                    // -------------------------
+                    auth
+                            .requestMatchers("/auth/login").permitAll()
+                            .requestMatchers("/auth/confirmar/**").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/auth/register")
+                            .hasAuthority(ROLE_MEDICO);
 
-                        // Login
-                        .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/auth/confirmar/**").permitAll()
+                    // -------------------------
+                    // ENTIDAD: USUARIOS
+                    // -------------------------
+                    auth
+                            .requestMatchers(HttpMethod.GET, "/api/usuarios/publico").permitAll()
+                            .requestMatchers("/usuarios/**").authenticated();
 
-                        // Listar médicos
-                        .requestMatchers(HttpMethod.GET, "/api/medicos/publicos").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                    // -------------------------
+                    // ENTIDAD: MEDICOS
+                    // -------------------------
+                    auth
+                            .requestMatchers(HttpMethod.GET, "/api/medicos/publicos").permitAll()
+                            .requestMatchers("/medicos/**").authenticated();
 
-                        // Listar especialidades
-                        .requestMatchers(HttpMethod.GET, "/api/especialidades/**").permitAll()
+                    // -------------------------
+                    // ENTIDAD: ESPECIALIDADES
+                    // -------------------------
+                    auth
+                            .requestMatchers(HttpMethod.GET, "/api/especialidades/**").permitAll()
+                            .requestMatchers("/especialidades/**").authenticated();
 
-                        // Listar usuarios
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios/publico").permitAll()
+                    // -------------------------
+                    // ENTIDAD: CITAS
+                    // -------------------------
+                    auth
+                            .requestMatchers("/citas/**").authenticated();
 
+                    // -------------------------
+                    // ENTIDAD: UPLOADS / ARCHIVOS
+                    // -------------------------
+                    auth
+                            .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll();
 
-                        // Endpoints protegidos por autenticación o rol
-
-                        // Registro
-                        .requestMatchers(HttpMethod.POST, "/auth/register").hasAuthority("MEDICO")
-
-                        // Usuarios
-                        .requestMatchers("/usuarios/**").authenticated()
-
-                        // Medicos
-                        .requestMatchers("/medicos/**").authenticated()
-
-                        // Citas
-                        .requestMatchers("/citas/**").authenticated()
-
-                        // Especialidades
-                        .requestMatchers("/especialidades/**").authenticated()
-
-                        // Cualquier otra petición requiere autenticación
-                        .anyRequest().authenticated()
-                )
-                // Añade el filtro JWT antes del filtro de login de Spring
+                    // Cualquier otro endpoint requiere autenticación
+                    auth.anyRequest().authenticated();
+                })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     /**
-     * Bean de AuthenticationManager moderno.
-     * Spring Security lo construye usando el UserDetailsService y PasswordEncoder
-     * registrados en el contexto.
+     * Expone el {@link AuthenticationManager} proporcionado por
+     * la configuración interna de Spring Security.
      *
-     * @param config AuthenticationConfiguration que contiene la configuración de autenticación.
-     * @return AuthenticationManager listo para autenticar usuarios.
-     * @throws Exception si falla la creación.
+     * @param config configuración de autenticación
+     * @return {@link AuthenticationManager} utilizado en el proceso de login
+     * @throws Exception si ocurre un error al obtener el manager
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -119,29 +150,27 @@ public class SecurityConfig {
     }
 
     /**
-     * Bean que define la jerarquía de roles para la aplicación.
-     * <p>
-     * Permite que Spring Security interprete que ciertos roles heredan
-     * automáticamente los privilegios de otros roles. Por ejemplo:
-     * <ul>
-     *     <li>ADMIN > MEDICO: un ADMIN tiene todos los privilegios de un MEDICO.</li>
-     *     <li>MEDICO > PACIENTE: un MEDICO tiene todos los privilegios de un PACIENTE.</li>
-     * </ul>
-     * Esto se aplica automáticamente en los checks de autorización,
-     * como hasRole() o hasAuthority().
+     * Define la jerarquía de roles del sistema.
      *
-     * @return RoleHierarchy configurada con la jerarquía de roles definida.
+     * <p>
+     * Jerarquía establecida:
+     * <pre>
+     * ADMIN   > MEDICO
+     * MEDICO  > PACIENTE
+     * </pre>
+     *
+     * Esto implica que un ADMIN hereda permisos de MEDICO y PACIENTE,
+     * y un MEDICO hereda permisos de PACIENTE.
+     * </p>
+     *
+     * @return {@link RoleHierarchy} configurada
      */
     @Bean
     public RoleHierarchy roleHierarchy() {
-
-        // Se crea la implementación de la jerarquía de roles
         RoleHierarchyImpl hierarchy = new RoleHierarchyImpl();
-
-        // Se define la jerarquía: ADMIN > MEDICO, MEDICO > PACIENTE
-        hierarchy.setHierarchy("ADMIN > MEDICO \n MEDICO > PACIENTE");
-
-        // Se devuelve el bean para que Spring Security lo use
+        hierarchy.setHierarchy(String.format("%s > %s \n %s > %s",
+                ROLE_ADMIN, ROLE_MEDICO,
+                ROLE_MEDICO, ROLE_PACIENTE));
         return hierarchy;
     }
 }
