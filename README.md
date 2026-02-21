@@ -186,4 +186,4 @@ Soraka/
 
 ## 📄 Licencia
 
-Este proyecto está disponible bajo la licencia [MIT](LICENSE).
+© 2026 lun-code. Todos los derechos reservados. Este proyecto es de carácter personal y se comparte únicamente con fines de visualización.
