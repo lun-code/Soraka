@@ -15,12 +15,33 @@ export function AuthProvider({ children }) {
             return null;
         }
 
-        return jwtDecode(token);
+        try {
+            const decoded = jwtDecode(token);
+
+            const ahora = Date.now() / 1000; // En segundos
+
+            if(decoded.exp < ahora) { // token expirado
+                
+                localStorage.removeItem("token");
+
+                return null;
+            }
+
+            return decoded;
+        }catch {
+            localStorage.removeItem("token"); // Token corrupto
+            return null;
+        }
     });
 
     const login = (token) => {
-        localStorage.setItem("token", token)
-        setUsuario(jwtDecode(token))
+        try {
+            const decoded = jwtDecode(token);
+            localStorage.setItem("token", token);
+            setUsuario(decoded);
+        }catch {
+            console.error("Token inválido recibido del servidor.");
+        }
     };
 
     const logout = () => {
@@ -37,5 +58,11 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+
+    if(!context) {
+        throw new Error("useAuth debe usarse dentro de <AuthProvider>");
+    }
+
+    return context;
 }
