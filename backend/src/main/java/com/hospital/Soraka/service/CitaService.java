@@ -283,7 +283,7 @@ public class CitaService {
      * Genera automáticamente citas DISPONIBLES para los médicos.
      * Cada cita se crea con paciente = null y estado = DISPONIBLE.
      */
-    @Scheduled(cron = "0 0 0 * * *") // Todos los días a medianoche
+    @Scheduled(cron = "0 0 1 * * *") // Todos los días a medianoche
     public void generarCitasDisponibles() {
         List<Medico> medicos = medicoRepository.findAll();
         LocalDate hoy = LocalDate.now();
