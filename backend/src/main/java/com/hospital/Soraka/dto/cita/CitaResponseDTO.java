@@ -58,6 +58,8 @@ public class CitaResponseDTO {
         return medicoNombre;
     }
 
+    public String getMedicoEspecialidad() {return medicoEspecialidad;}
+
     public LocalDateTime getFechaHora() {
         return fechaHora;
     }

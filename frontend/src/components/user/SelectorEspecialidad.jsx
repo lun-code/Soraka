@@ -1,5 +1,19 @@
+import { useEffect, useState } from "react";
+
 export function SelectorEspecialidad({ value, onChange }) {
-  const especialidades = ["Cardiologia", "Dermatologia", "Pediatria"];
+
+  const [especialidades, setEspecialidades] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/especialidades")
+      .then((res) => res.json())
+      .then((data) => {
+        setEspecialidades(data)
+      })
+      .catch((err) => {
+        console.error("Error cargando especialidades");
+      })
+  }, []);
 
   return (
     <div className="mb-8">
@@ -32,8 +46,8 @@ export function SelectorEspecialidad({ value, onChange }) {
           Seleciona una especialidad
         </option>
         {especialidades.map((especialidad) => (
-          <option key={especialidad} value={especialidad}>
-            {especialidad}
+          <option key={especialidad.id} value={especialidad.nombre}>
+            {especialidad.nombre}
           </option>
         ))}
       </select>

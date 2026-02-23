@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -15,6 +16,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 /**
  * Configuración principal de seguridad de la aplicación.
@@ -27,6 +33,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *     <li>Reglas de autorización por endpoint.</li>
  *     <li>Jerarquía de roles.</li>
  *     <li>Registro del filtro JWT en la cadena de seguridad.</li>
+ *     <li>Configuración global de CORS.</li>
  * </ul>
  * </p>
  *
@@ -82,9 +89,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
+
+                    // -------------------------
+                    // PREFLIGHT CORS
+                    // -------------------------
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
 
                     // -------------------------
                     // ENTIDAD: AUTH
@@ -134,6 +147,31 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Define la configuración CORS global de la aplicación.
+     *
+     * <p>
+     * Permite peticiones desde el origen del frontend en desarrollo,
+     * habilitando los métodos HTTP necesarios y cualquier cabecera.
+     * Al registrarse como {@link CorsConfigurationSource}, Spring Security
+     * lo recoge automáticamente al usar {@code .cors(Customizer.withDefaults())}.
+     * </p>
+     *
+     * @return {@link CorsConfigurationSource} con la configuración CORS aplicada a todos los endpoints
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     /**
