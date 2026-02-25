@@ -1,15 +1,22 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { crearApiFetch } from "../../utils/apiFetch";
+
 
 const CITAS_POR_PAGINA = 5;
 
 export function CitasReservadas() {
+  const { logout } = useAuth();
+  const apiFetch = crearApiFetch(logout);
+
+
   const [citas, setCitas] = useState([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch("http://localhost:8080/api/citas/mis-citas", {
+    apiFetch("http://localhost:8080/api/citas/mis-citas", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -25,7 +32,7 @@ export function CitasReservadas() {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `http://localhost:8080/api/citas/${citaId}/cancelar`,
         {
           method: "POST",

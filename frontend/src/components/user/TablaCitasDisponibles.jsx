@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { crearApiFetch } from "../../utils/apiFetch";
+
 
 const CITAS_POR_PAGINA = 5;
 
 export function TablaCitasDisponibles({ especialidad }) {
+
+  const { logout } = useAuth();
+  const apiFetch = crearApiFetch(logout);
+
   const [citas, setCitas] = useState([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [reservando, setReservando] = useState(null);
@@ -13,7 +20,7 @@ export function TablaCitasDisponibles({ especialidad }) {
   useEffect(() => {
     if (!especialidad) return;
     const token = localStorage.getItem("token");
-    fetch("http://localhost:8080/api/citas/disponibles", {
+    apiFetch("http://localhost:8080/api/citas/disponibles", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -46,7 +53,7 @@ export function TablaCitasDisponibles({ especialidad }) {
     setReservando(modal.citaId);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `http://localhost:8080/api/citas/${modal.citaId}/reservar`,
         {
           method: "POST",
