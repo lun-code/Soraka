@@ -6,6 +6,7 @@ import { Especialistas } from './pages/Especialistas';
 import { DashboardUsuario } from './pages/user/DashboardUsuario';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import { MisCitas } from './pages/user/MisCitas';
 
 function App() {
 
@@ -29,6 +30,15 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route 
+              path='/mis-citas'
+              element={
+                <ProtectedRoute allowedRoles={["PACIENTE"]}>
+                  <MisCitas />
+                </ProtectedRoute>
+              }
+            />            
           </Routes>
         </div>
       </AuthProvider>
