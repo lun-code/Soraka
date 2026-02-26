@@ -2,6 +2,10 @@ import { Shield, Clock, User, ArrowRight } from "lucide-react"; // Iconos limpio
 import clinica from "../../assets/clinica.png";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { getMedicosPublicos } from "../../services/medicoService";
+import { getEspecialidades } from "../../services/especialidadService";
+import { getUsuariosPublico } from "../../services/usuarioService";
+
 
 export function Hero() {
 
@@ -10,37 +14,23 @@ export function Hero() {
   const [usuarios, setUsuarios] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/medicos/publicos")
-      .then((res) => res.json())
-      .then((data) => {
-        setMedicos(data)
-      })
-      .catch((err) => {
-        console.log("Error cargando médicos:", err);
-      })
+    getMedicosPublicos()
+      .then(setMedicos)
+      .catch((err) => console.log("Error cargando médicos:", err));
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/especialidades")
-      .then((res) => res.json())
-      .then((data) => {
-        setEspecialidades(data)
-      })
-      .catch((err) => {
-        console.log("Error cargando especialidades: ", err)
-      })
+    getEspecialidades()
+      .then(setEspecialidades)
+      .catch((err) => console.log("Error cargando especialidades:", err));
   }, []);
 
-    useEffect(() => {
-    fetch("http://localhost:8080/api/usuarios/publico")
-      .then((res) => res.json())
-      .then((data) => {
-        setUsuarios(data)
-      })
-      .catch((err) => {
-        console.log("Error cargando usuarios: ", err)
-      })
+  useEffect(() => {
+    getUsuariosPublico()
+      .then(setUsuarios)
+      .catch((err) => console.log("Error cargando usuarios:", err));
   }, []);
+
 
   return (
     <div className="bg-white">

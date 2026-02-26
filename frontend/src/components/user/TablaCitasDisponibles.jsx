@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { crearApiFetch } from "../../utils/apiFetch";
+import { crearApiFetch } from "../../services/api";
+import { getCitasDisponibles, reservarCita } from "../../services/citaService";
 
 
 const CITAS_POR_PAGINA = 5;
@@ -19,17 +20,14 @@ export function TablaCitasDisponibles({ especialidad }) {
 
   useEffect(() => {
     if (!especialidad) return;
-    const token = localStorage.getItem("token");
-    apiFetch("http://localhost:8080/api/citas/disponibles", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
+    getCitasDisponibles(apiFetch)
       .then((data) => {
         setCitas(data.filter((c) => c.medicoEspecialidad === especialidad));
         setPaginaActual(1);
       })
       .catch(() => console.error("Error cargando citas."));
   }, [especialidad]);
+
 
   const abrirModal = (citaId) => {
     setMotivo("");
@@ -43,29 +41,16 @@ export function TablaCitasDisponibles({ especialidad }) {
     setErrorMotivo("");
   };
 
-  const handleReservar = async () => {
+    const handleReservar = async () => {
     if (!motivo.trim()) {
       setErrorMotivo("El motivo es obligatorio.");
       return;
     }
 
-    const token = localStorage.getItem("token");
     setReservando(modal.citaId);
 
     try {
-      const res = await apiFetch(
-        `http://localhost:8080/api/citas/${modal.citaId}/reservar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ motivo }),
-        }
-      );
-
-      if (!res.ok) throw new Error("Error al reservar");
+      await reservarCita(apiFetch, modal.citaId, motivo);
 
       setCitas((prev) => prev.filter((c) => c.id !== modal.citaId));
       const citasRestantes = citas.filter((c) => c.id !== modal.citaId);
@@ -81,6 +66,7 @@ export function TablaCitasDisponibles({ especialidad }) {
       setReservando(null);
     }
   };
+
 
   const totalPaginas = Math.ceil(citas.length / CITAS_POR_PAGINA);
   const citasPagina = citas.slice(

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { crearApiFetch } from "../../utils/apiFetch";
-
+import { crearApiFetch } from "../../services/api";
+import { getMisCitas, cancelarCita } from "../../services/citaService";
 
 const CITAS_POR_PAGINA = 5;
 
@@ -15,11 +15,7 @@ export function CitasReservadas() {
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    apiFetch("http://localhost:8080/api/citas/mis-citas", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
+    getMisCitas(apiFetch)
       .then((data) => {
         setCitas(data);
         setPaginaActual(1);
@@ -27,29 +23,14 @@ export function CitasReservadas() {
       .catch(() => console.error("Error cargando citas."));
   }, []);
 
+
   const handleCancelar = async (citaId) => {
-
-    const token = localStorage.getItem("token");
-
     try {
-      const res = await apiFetch(
-        `http://localhost:8080/api/citas/${citaId}/cancelar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      await cancelarCita(apiFetch, citaId);
 
-      if (!res.ok) throw new Error("Error al cancelar");
-
-      // Eliminar la cita cancelada.
       setCitas((prev) => prev.filter((c) => c.id !== citaId));
 
-      // Saber cuantas citas quedan para recalcular paginación.
       const citasRestantes = citas.filter((c) => c.id !== citaId);
-
       const nuevasPaginas = Math.ceil(citasRestantes.length / CITAS_POR_PAGINA);
       if (paginaActual > nuevasPaginas && paginaActual > 1) {
         setPaginaActual((p) => p - 1);
@@ -61,6 +42,7 @@ export function CitasReservadas() {
       cerrarModal();
     }
   };
+
 
   const abrirModal = (citaId) => {
     setModal(citaId)

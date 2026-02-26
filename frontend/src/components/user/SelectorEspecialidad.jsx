@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
+import { getEspecialidades } from "../../services/especialidadService";
+
 
 export function SelectorEspecialidad({ value, onChange }) {
 
   const [especialidades, setEspecialidades] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/especialidades")
-      .then((res) => res.json())
-      .then((data) => {
-        setEspecialidades(data)
-      })
-      .catch((err) => {
-        console.error("Error cargando especialidades");
-      })
+    getEspecialidades()
+      .then(setEspecialidades)
+      .catch(() => console.error("Error cargando especialidades"));
   }, []);
 
   return (

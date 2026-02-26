@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { jwtDecode } from "jwt-decode";
+import { login as loginService } from "../../services/authService";
 
 export function LoginForm() {
 
@@ -17,15 +18,7 @@ export function LoginForm() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8080/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) throw new Error("Credenciales incorrectas");
-
-      const data = await response.json();
+      const data = await loginService(email, password);
       login(data.token);
 
       const decoded = jwtDecode(data.token);
