@@ -321,8 +321,10 @@ public class CitaService {
      * </ul>
      * Se ejecuta cada 10 minutos.
      */
-    @Scheduled(cron = "0 */10 * * * *")
+    @Scheduled(fixedDelay = 30000) // cada 30 segundos
     public void cerrarCitasPasadas() {
+        System.out.println(">>> SCHEDULER EJECUTÁNDOSE: " + LocalDateTime.now());
+
         List<Cita> citasPasadas =
                 citaRepository.findByFechaHoraBeforeAndEstadoIn(
                         LocalDateTime.now(),

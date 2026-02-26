@@ -1,6 +1,6 @@
 import { Input, Button, Typography } from "@material-tailwind/react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { jwtDecode } from "jwt-decode";
 
@@ -10,32 +10,33 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     try {
       const response = await fetch("http://localhost:8080/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      if(!response.ok) {
-        throw new Error("Credenciales incorrectas");
-      }
+      if (!response.ok) throw new Error("Credenciales incorrectas");
 
       const data = await response.json();
-
       login(data.token);
 
       const decoded = jwtDecode(data.token);
       const rol = decoded.rol;
 
-      if (rol === "PACIENTE") {
+      // Si venía de una ruta protegida, volver ahí. Si no, ruta por rol.
+      const from = location.state?.from;
+
+      if (from) {
+        navigate(from, { replace: true });
+      } else if (rol === "PACIENTE") {
         navigate("/dashboard");
       } else if (rol === "MEDICO") {
         navigate("/medico");
@@ -43,7 +44,7 @@ export function LoginForm() {
         navigate("/admin");
       }
 
-    }catch(error) {
+    } catch (error) {
       console.log(error.message);
     }
   }
