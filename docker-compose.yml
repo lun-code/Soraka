@@ -44,6 +44,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       TZ: Europe/Madrid
       JAVA_TOOL_OPTIONS: -Duser.timezone=Europe/Madrid
+    volumes:
+      - ./backend/uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy

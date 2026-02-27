@@ -11,6 +11,6 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Mapea /uploads/** a la carpeta física de tu backend
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:uploads/"); // ruta relativa a donde corre la app
+                .addResourceLocations("file:/app/uploads/"); // ruta relativa a donde corre la app en docker
     }
 }

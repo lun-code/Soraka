@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { MapPin, ArrowLeft } from "lucide-react"; // Añadimos ArrowLeft
 import { Link } from "react-router-dom"; // Necesario para navegar
 import { NavBarDefault } from "../components/home/NavBarDefault";
+import { getMedicosPublicos } from "../services/medicoService";
+
 
 export function Especialistas() {
   const [medicos, setMedicos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/medicos/publicos")
-      .then((res) => res.json())
+    getMedicosPublicos()
       .then((data) => {
         setMedicos(data);
         setLoading(false);
