@@ -1,6 +1,6 @@
 import logo from "../../assets/descarga.png";
-import { Link, useNavigate } from "react-router-dom";
-import { Home, User, Phone, CalendarFold } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Home, User, Phone, CalendarFold, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import {
@@ -11,7 +11,7 @@ import {
   IconButton,
 } from "@material-tailwind/react";
 
-function NavList() {
+function NavList({ location }) {
   const navItems = [
     { name: "Inicio", path: "/", icon: <Home size={18} /> },
     {
@@ -33,7 +33,7 @@ function NavList() {
           color="white"
           className="font-bold text-lg hover:text-blue-200 transition-all flex justify-center"
         >
-          <Link to={item.path} className="flex items-center gap-2">
+          <Link to={item.path} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${location.pathname === item.path ? "bg-white text-[#172554]" : "hover:text-blue-200"}`}>
             {item.icon}
             {item.name}
           </Link>
@@ -47,6 +47,7 @@ export function NavbarUsuario() {
   const [openNav, setOpenNav] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -81,7 +82,7 @@ export function NavbarUsuario() {
           </Link>
 
           <div className="hidden lg:flex items-center">
-            <NavList />
+            <NavList location={location} />
           </div>
 
           <div className="flex items-center gap-x-1">
@@ -92,7 +93,10 @@ export function NavbarUsuario() {
                 className="hidden lg:inline-block px-10 py-3 text-gray-200 text-base shadow-xl hover:scale-105 transition-transform"
                 onClick={handleLogout}
               >
-                <span>Cerrar sesión</span>
+                <span className="flex items-center gap-2">
+                  <LogOut />
+                  Cerrar sesión
+                  </span>
               </Button>
           </div>
 
@@ -137,7 +141,7 @@ export function NavbarUsuario() {
 
         {/* Menú móvil ajustado */}
         <Collapse open={openNav} className="bg-[#172554] px-4">
-          <NavList />
+          <NavList location={location}/>
             <Button
               fullWidth
               variant="gradient"
