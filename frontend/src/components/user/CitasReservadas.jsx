@@ -17,7 +17,9 @@ export function CitasReservadas() {
   useEffect(() => {
     getMisCitas(apiFetch)
       .then((data) => {
-        setCitas(data);
+        const ahora = new Date();
+        const citasFuturas = data.filter((cita) => new Date(cita.fechaHora) > ahora);
+        setCitas(citasFuturas);
         setPaginaActual(1);
       })
       .catch(() => console.error("Error cargando citas."));
