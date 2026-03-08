@@ -8,13 +8,16 @@ Aplicación web fullstack para la reserva y gestión de citas médicas en un hos
 
 ## ✨ Funcionalidades
 
-- [x] Registro de usuarios (gestionado por el administrador)
+- [x] Registro de usuarios (gestionado por el administrador o médico)
 - [x] Inicio de sesión con JWT
 - [x] Validación de cuenta por email
 - [x] Gestión de médicos y especialidades
 - [x] Gestión de usuarios y pacientes
 - [x] Listado de citas disponibles
 - [x] Reserva y cancelación de citas
+- [x] Panel de administración completo
+- [x] Dashboard por rol (Paciente, Médico, Admin)
+- [x] Página pública de especialistas
 
 ---
 
@@ -31,7 +34,7 @@ Esto significa que un **ADMIN** hereda todos los permisos de MEDICO y PACIENTE, 
 | Rol | Permisos principales |
 |---|---|
 | `ADMIN` | Control total: gestión de usuarios, médicos, especialidades y citas |
-| `MEDICO` | Crear, modificar, eliminar y consultar citas. Registrar nuevos usuarios |
+| `MEDICO` | Consultar sus propias citas, cancelar citas y registrar nuevos usuarios |
 | `PACIENTE` | Ver citas disponibles, reservar y cancelar sus propias citas |
 
 ---
@@ -40,7 +43,7 @@ Esto significa que un **ADMIN** hereda todos los permisos de MEDICO y PACIENTE, 
 
 La autenticación está basada en **JWT (JSON Web Token)**:
 
-1. El administrador registra al usuario, cuya cuenta queda **inactiva** inicialmente.
+1. El administrador (o médico) registra al usuario, cuya cuenta queda **inactiva** inicialmente.
 2. Se envía un **email de confirmación** con un token único al usuario.
 3. El usuario activa su cuenta haciendo clic en el enlace del email.
 4. Una vez activa la cuenta, el usuario puede iniciar sesión y recibe un **token JWT** válido por **1 hora**.
@@ -96,14 +99,50 @@ El token JWT incluye el nombre, email y rol del usuario como claims adicionales.
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
 | `GET` | `/api/citas` | ADMIN | Listar todas las citas |
-| `GET` | `/api/citas/disponibles` | Autenticado | Listar citas disponibles con fecha futura |
+| `GET` | `/api/citas/disponibles` | PACIENTE, MEDICO, ADMIN | Listar citas disponibles con fecha futura |
 | `GET` | `/api/citas/mis-citas` | PACIENTE | Ver citas propias del paciente |
+| `GET` | `/api/citas/mis-citas-medico` | MEDICO | Ver citas propias del médico autenticado |
 | `GET` | `/api/citas/{id}` | MEDICO, ADMIN | Obtener cita por ID |
-| `POST` | `/api/citas` | MEDICO, ADMIN | Crear cita |
-| `PATCH` | `/api/citas/{id}` | MEDICO, ADMIN | Modificar cita |
-| `DELETE` | `/api/citas/{id}` | MEDICO, ADMIN | Eliminar cita |
+| `POST` | `/api/citas` | ADMIN | Crear cita |
+| `PATCH` | `/api/citas/{id}` | ADMIN | Modificar cita |
+| `DELETE` | `/api/citas/{id}` | ADMIN | Eliminar cita |
 | `POST` | `/api/citas/{id}/reservar` | PACIENTE | Reservar una cita disponible |
-| `POST` | `/api/citas/{id}/cancelar` | Autenticado | Cancelar una cita |
+| `POST` | `/api/citas/{id}/cancelar` | PACIENTE, MEDICO, ADMIN | Cancelar una cita |
+
+---
+
+## 🖥️ Rutas del Frontend
+
+### Públicas
+
+| Ruta | Descripción |
+|---|---|
+| `/` | Página de inicio (Hero con médicos y especialidades) |
+| `/login` | Inicio de sesión |
+| `/especialistas` | Listado público de especialistas |
+
+### Paciente (requiere rol `PACIENTE`)
+
+| Ruta | Descripción |
+|---|---|
+| `/dashboard` | Panel principal del paciente |
+| `/mis-citas` | Ver, reservar y cancelar citas propias |
+
+### Médico (requiere rol `MEDICO`)
+
+| Ruta | Descripción |
+|---|---|
+| `/medico` | Dashboard del médico |
+
+### Administrador (requiere rol `ADMIN`)
+
+| Ruta | Descripción |
+|---|---|
+| `/admin` | Panel principal de administración |
+| `/admin/usuarios` | Gestión de usuarios |
+| `/admin/medicos` | Gestión de médicos |
+| `/admin/especialidades` | Gestión de especialidades |
+| `/admin/citas` | Gestión de citas |
 
 ---
 
@@ -116,7 +155,11 @@ El token JWT incluye el nombre, email y rol del usuario como claims adicionales.
 - **MySQL 8.0** — base de datos relacional
 
 ### Frontend
-- **React** — interfaz de usuario (puerto 5173)
+- **React 18** con **Vite**
+- **React Router DOM v7** — enrutado por rol con rutas protegidas
+- **Tailwind CSS v3** + **Material Tailwind** — estilos y componentes UI
+- **Lucide React** + **Heroicons** — iconografía
+- **jwt-decode** — decodificación del token en cliente
 
 ### Infraestructura
 - **Docker + Docker Compose** — contenedores para backend, base de datos y phpMyAdmin
@@ -160,6 +203,8 @@ Una vez iniciado, los servicios estarán disponibles en:
 | Frontend | http://localhost:5173 |
 | phpMyAdmin | http://localhost:8081 |
 
+> **Nota:** El frontend (`localhost:5173`) debe ejecutarse por separado en desarrollo con `npm run dev` dentro de la carpeta `frontend/`. El Docker Compose gestiona únicamente el backend, la base de datos y phpMyAdmin.
+
 ---
 
 ## 📁 Estructura del proyecto
@@ -168,16 +213,22 @@ Una vez iniciado, los servicios estarán disponibles en:
 Soraka/
 ├── backend/
 │   └── src/main/java/com/hospital/Soraka/
-│       ├── config/         # Configuración general
+│       ├── config/         # Configuración general y CORS
 │       ├── controller/     # Controladores REST
 │       ├── dto/            # Objetos de transferencia de datos
 │       ├── entity/         # Entidades JPA
-│       ├── enums/          # Enumeraciones
+│       ├── enums/          # Enumeraciones (Rol)
 │       ├── exception/      # Excepciones personalizadas
 │       ├── repository/     # Repositorios Spring Data
 │       ├── security/       # Configuración JWT y Spring Security
 │       └── service/        # Lógica de negocio
-├── frontend/               # Aplicación React
+├── frontend/
+│   └── src/
+│       ├── assets/         # Imágenes y recursos estáticos
+│       ├── components/     # Componentes reutilizables (auth, home, admin, user...)
+│       ├── contexts/       # AuthContext (estado global de autenticación)
+│       ├── pages/          # Páginas por rol (home, user, medico, admin)
+│       └── services/       # Llamadas a la API REST
 ├── docker-compose.yml
 └── dockerfile
 ```
