@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-import { NavbarAdmin } from "../admin/NavBarAdmin";
+import { NavbarAdmin } from "../../components/admin/NavBarAdmin";
 import { TablaAdmin } from "../../components/admin/TablaAdmin";
 import { Modal, ModalConfirmar } from "../../components/admin/Modal";
 import { useAuth } from "../../contexts/AuthContext";

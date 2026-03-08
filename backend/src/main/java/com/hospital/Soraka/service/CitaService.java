@@ -103,6 +103,17 @@ public class CitaService {
         ).stream().map(this::buildResponse).toList();
     }
 
+    public List<CitaResponseDTO> getCitasPorMedico(Long usuarioId) {
+        Medico medico = medicoRepository.findByUsuarioId(usuarioId)
+                .orElseThrow(() -> new MedicoNotFoundException("Médico no encontrado"));
+
+        return citaRepository.findByMedicoAndEstadoInAndFechaHoraAfter(
+                medico,
+                List.of(EstadoCita.DISPONIBLE, EstadoCita.CONFIRMADA),
+                LocalDateTime.now()
+        ).stream().map(this::buildResponse).toList();
+    }    
+
     /* =========================
        CREACIÓN
        ========================= */

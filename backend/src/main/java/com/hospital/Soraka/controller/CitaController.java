@@ -62,6 +62,13 @@ public class CitaController {
         return citaService.getCitaById(id);
     }
 
+    @GetMapping("/mis-citas-medico")
+    @PreAuthorize("hasAuthority('MEDICO')")
+    public List<CitaResponseDTO> getMisCitasMedico(Authentication authentication) {
+        Usuario usuario = (Usuario) authentication.getPrincipal();
+        return citaService.getCitasPorMedico(usuario.getId());
+    }    
+
     /**
      * Crea una nueva cita médica.
      *
@@ -69,7 +76,7 @@ public class CitaController {
      * @return cita creada
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public CitaResponseDTO createCita(
             @RequestBody @Valid CitaPostDTO cita
     ) {
@@ -84,7 +91,7 @@ public class CitaController {
      * @return cita modificada
      */
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public CitaResponseDTO patchCita(
             @PathVariable Long id,
             @RequestBody @Valid CitaPatchDTO cita
@@ -98,7 +105,7 @@ public class CitaController {
      * @param id identificador de la cita
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('MEDICO') or hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public void deleteCita(@PathVariable Long id) {
         citaService.deleteCita(id);
     }

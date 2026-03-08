@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface MedicoRepository extends JpaRepository<Medico,Long> {
 
     boolean existsByUsuario(Usuario usuario);
+
+    Optional<Medico> findByUsuarioId(Long usuarioId);
 }

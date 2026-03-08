@@ -1,6 +1,6 @@
 import { Card, Typography } from "@material-tailwind/react";
-import logo from "../assets/descarga.png";
-import { LoginForm } from "../components/auth/LoginForm"; // Importamos el componente
+import logo from "../../assets/descarga.png";
+import { LoginForm } from "../../components/auth/LoginForm"; // Importamos el componente
 
 export function Login() {
   return (

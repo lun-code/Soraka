@@ -1,17 +1,19 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css'
-import { Home } from "./pages/Home"
-import { Login } from "./pages/Login"
-import { Especialistas } from './pages/Especialistas';
+import { Home } from "./pages/home/Home"
+import { Login } from "./pages/home/Login"
+import { Especialistas } from './pages/home/Especialistas';
 import { DashboardUsuario } from './pages/user/DashboardUsuario';
 import { MisCitas } from './pages/user/MisCitas';
-import { DashboardAdmin } from './components/admin/DashboardAdmin';
-import { AdminUsuarios } from './components/admin/AdminUsuarios';
-import { AdminMedicos } from './components/admin/AdminMedicos';
-import { AdminEspecialidades } from './components/admin/AdminEspecialidades';
-import { AdminCitas } from './components/admin/AdminCitas';
+import { DashboardAdmin } from './pages/admin/DashboardAdmin';
+import { AdminUsuarios } from './pages/admin/AdminUsuarios';
+import { AdminMedicos } from './pages/admin/AdminMedicos';
+import { AdminEspecialidades } from './pages/admin/AdminEspecialidades';
+import { AdminCitas } from './pages/admin/AdminCitas';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import { DashboardMedico } from './pages/medico/DashboardMedico';
+
 
 function App() {
   return (
@@ -81,6 +83,16 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["ADMIN"]}>
                   <AdminCitas />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ── Medico ──────────────────────────────────── */}
+            <Route
+              path='/medico'
+              element={
+                <ProtectedRoute allowedRoles={["MEDICO"]}>
+                  <DashboardMedico />
                 </ProtectedRoute>
               }
             />

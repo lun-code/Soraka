@@ -1,6 +1,6 @@
 import logo from "../../assets/descarga.png";
 import { Link } from "react-router-dom";
-import { Home, Users, Info, Phone } from "lucide-react";
+import { Home, Users, Info, Phone, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   Navbar,
@@ -87,7 +87,10 @@ export function NavBarDefault() {
                 color="white"
                 className="hidden lg:inline-block px-10 py-3 text-[#172554] text-base font-bold shadow-xl hover:scale-105 transition-transform"
               >
-                <span>Iniciar sesión</span>
+                <span className="flex flex-items gap-2">
+                  <LogIn />
+                  Iniciar sesión
+                  </span>
               </Button>
             </Link>
           </div>

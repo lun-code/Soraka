@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { MapPin, ArrowLeft } from "lucide-react"; // Añadimos ArrowLeft
 import { Link } from "react-router-dom"; // Necesario para navegar
-import { NavBarDefault } from "../components/home/NavBarDefault";
-import { getMedicosPublicos } from "../services/medicoService";
+import { NavBarDefault } from "../../components/home/NavBarDefault";
+import { getMedicosPublicos } from "../../services/medicoService";
 
 
 export function Especialistas() {

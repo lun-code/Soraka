@@ -10,6 +10,11 @@ export const getMisCitas = async (apiFetch) => {
     return res.json();
 };
 
+export const getMisCitasMedico = async (apiFetch) => {
+    const res = await apiFetch(`${BASE_URL}/api/citas/mis-citas-medico`);
+    return res.json();
+};
+
 export const reservarCita = async (apiFetch, citaId, motivo) => {
     const res = await apiFetch(`${BASE_URL}/api/citas/${citaId}/reservar`, {
         method: "POST",

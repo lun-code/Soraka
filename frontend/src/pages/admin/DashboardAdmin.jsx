@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Users, Stethoscope, BookOpen, CalendarDays, CalendarCheck, CalendarX } from "lucide-react";
-import { NavbarAdmin } from "../admin/NavBarAdmin";
+import { NavbarAdmin } from "../../components/admin/NavBarAdmin";
 import { useAuth } from "../../contexts/AuthContext";
 import { getUsuarios, getMedicos, getEspecialidades, getCitas } from "../../services/adminService";
 
