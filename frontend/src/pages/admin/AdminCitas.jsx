@@ -1,121 +1,49 @@
-import { useEffect, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { NavbarAdmin } from "../../components/admin/NavBarAdmin";
 import { TablaAdmin } from "../../components/admin/TablaAdmin";
 import { Modal, ModalConfirmar } from "../../components/admin/Modal";
 import { useAuth } from "../../contexts/AuthContext";
-import {
-  getCitas,
-  updateCita,
-  deleteCita,
-  getMedicos,
-} from "../../services/adminService";
-
-const FORM_VACIO = { medicoId: "", fechaHora: "" };
+import { useAdminCitas } from "../../hooks/admin/useAdminCitas";
 
 function formatFecha(fechaHora) {
   if (!fechaHora) return "—";
-  const d = new Date(fechaHora);
-  return d.toLocaleString("es-ES", {
+  return new Date(fechaHora).toLocaleString("es-ES", {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
 }
 
-// Convierte "2025-06-10T09:00:00" → "2025-06-10T09:00" (valor para input datetime-local)
-function toInputDatetime(fechaHora) {
-  if (!fechaHora) return "";
-  return fechaHora.slice(0, 16);
-}
+const coloresEstado = {
+  DISPONIBLE: "bg-emerald-100 text-emerald-700",
+  CONFIRMADA: "bg-orange-100 text-orange-700",
+  REALIZADA:  "bg-blue-100 text-blue-700",
+  CADUCADA:   "bg-red-100 text-red-500",
+};
+
+const columns = [
+  { key: "id", label: "ID" },
+  { key: "medicoNombre", label: "Médico" },
+  { key: "medicoEspecialidad", label: "Especialidad" },
+  { key: "fechaHora", label: "Fecha y hora", render: (r) => formatFecha(r.fechaHora) },
+  {
+    key: "estado", label: "Estado",
+    render: (r) => (
+      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${coloresEstado[r.estado] ?? ""}`}>
+        {r.estado}
+        {r.pacienteNombre ? ` · ${r.pacienteNombre}` : ""}
+      </span>
+    ),
+  },
+];
 
 export function AdminCitas() {
   const { apiFetch } = useAuth();
-  const [citas, setCitas] = useState([]);
-  const [medicos, setMedicos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalForm, setModalForm] = useState(false);
-  const [modalEliminar, setModalEliminar] = useState(null);
-  const [editando, setEditando] = useState(null);
-  const [form, setForm] = useState(FORM_VACIO);
-  const [error, setError] = useState("");
-  const [guardando, setGuardando] = useState(false);
-
-  const cargar = () => {
-    setLoading(true);
-    Promise.all([getCitas(apiFetch), getMedicos(apiFetch)])
-      .then(([c, m]) => { setCitas(c); setMedicos(m); })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(cargar, []);
-
-  const abrirEditar = (cita) => {
-    setEditando(cita);
-    setForm({
-      medicoId: cita.medicoId ?? "",
-      fechaHora: toInputDatetime(cita.fechaHora),
-    });
-    setError("");
-    setModalForm(true);
-  };
-
-  const cerrarForm = () => {
-    setModalForm(false);
-    setEditando(null);
-    setError("");
-  };
-
-  const handleGuardar = async () => {
-    if (!form.medicoId || !form.fechaHora) {
-      setError("Médico y fecha/hora son obligatorios.");
-      return;
-    }
-    setGuardando(true);
-    setError("");
-    try {
-      await updateCita(apiFetch, editando.id, {
-        medicoId: Number(form.medicoId),
-        fechaHora: form.fechaHora + ":00",
-      });
-      cargar();
-      cerrarForm();
-    } catch {
-      setError("Error al guardar. Revisa los datos e inténtalo de nuevo.");
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  const handleEliminar = async () => {
-    if (!modalEliminar) return;
-    await deleteCita(apiFetch, modalEliminar.id);
-    setModalEliminar(null);
-    cargar();
-  };
-
-  const columns = [
-    { key: "id", label: "ID" },
-    { key: "medicoNombre", label: "Médico" },
-    { key: "medicoEspecialidad", label: "Especialidad" },
-    { key: "fechaHora", label: "Fecha y hora", render: (r) => formatFecha(r.fechaHora) },
-    {
-      key: "estado", label: "Estado",
-      render: (r) => {
-        const colores = {
-          DISPONIBLE: "bg-emerald-100 text-emerald-700",
-          CONFIRMADA: "bg-orange-100 text-orange-700",
-          REALIZADA:  "bg-blue-100 text-blue-700",
-          CADUCADA:   "bg-red-100 text-red-500",
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colores[r.estado] ?? ""}`}>
-            {r.estado}
-            {r.pacienteNombre ? ` · ${r.pacienteNombre}` : ""}
-          </span>
-        );
-      }
-    },
-  ];
+  const {
+    citas, medicos, loading,
+    modalForm, modalEliminar, form, error, guardando,
+    setForm, setModalEliminar,
+    abrirEditar, cerrarForm, handleGuardar, handleEliminar,
+  } = useAdminCitas(apiFetch);
 
   return (
     <div>
@@ -151,7 +79,7 @@ export function AdminCitas() {
       <Modal
         open={modalForm}
         onClose={cerrarForm}
-        title={"Editar cita"}
+        title="Editar cita"
         footer={
           <>
             <button onClick={cerrarForm} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 transition">Cancelar</button>

@@ -1,72 +1,17 @@
-import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { crearApiFetch } from "../../services/api";
-import { getMisCitas, cancelarCita } from "../../services/citaService";
-
-const CITAS_POR_PAGINA = 5;
+import { useCitasReservadas } from "../../hooks/useCitasReservadas";
 
 export function CitasReservadas() {
-  const { logout } = useAuth();
-  const apiFetch = crearApiFetch(logout);
-
-
-  const [citas, setCitas] = useState([]);
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [modal, setModal] = useState(null);
-
-  useEffect(() => {
-    getMisCitas(apiFetch)
-      .then((data) => {
-        const ahora = new Date();
-        const citasFuturas = data.filter((cita) => new Date(cita.fechaHora) > ahora);
-        setCitas(citasFuturas);
-        setPaginaActual(1);
-      })
-      .catch(() => console.error("Error cargando citas."));
-  }, []);
-
-
-  const handleCancelar = async (citaId) => {
-    try {
-      await cancelarCita(apiFetch, citaId);
-
-      setCitas((prev) => prev.filter((c) => c.id !== citaId));
-
-      const citasRestantes = citas.filter((c) => c.id !== citaId);
-      const nuevasPaginas = Math.ceil(citasRestantes.length / CITAS_POR_PAGINA);
-      if (paginaActual > nuevasPaginas && paginaActual > 1) {
-        setPaginaActual((p) => p - 1);
-      }
-    } catch (err) {
-      console.error("No se pudo cancelar la cita:", err);
-      alert("Hubo un error al cancelar la cita. Inténtalo de nuevo.");
-    } finally {
-      cerrarModal();
-    }
-  };
-
-
-  const abrirModal = (citaId) => {
-    setModal(citaId)
-  }
-
-  const cerrarModal = () => {
-    setModal(null)
-  }  
-
-  const totalPaginas = Math.ceil(citas.length / CITAS_POR_PAGINA);
-  const citasPagina = citas.slice(
-    (paginaActual - 1) * CITAS_POR_PAGINA,
-    paginaActual * CITAS_POR_PAGINA
-  );
+  const { apiFetch } = useAuth();
+  const {
+    citasPagina, totalPaginas, paginaActual, modal,
+    setPaginaActual, abrirModal, cerrarModal, handleCancelar,
+  } = useCitasReservadas(apiFetch);
 
   return (
     <>
       <section className="bg-white rounded-2xl shadow-lg p-8">
-        <h3 className="text-xl font-semibold text-gray-800 mb-6">
-          Mis citas
-        </h3>
-
+        <h3 className="text-xl font-semibold text-gray-800 mb-6">Mis citas</h3>
         <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-y-3">
             <thead>
@@ -79,28 +24,13 @@ export function CitasReservadas() {
             </thead>
             <tbody>
               {citasPagina.map((cita) => (
-                <tr
-                  key={cita.id}
-                  className="bg-gray-50 text-sm text-gray-700 hover:bg-gray-200 transition rounded-xl"
-                >
-                  <td className="px-6 py-4 rounded-l-xl font-medium">
-                    {cita.medicoNombre}
-                  </td>
-                  <td className="px-6 py-4">
-                    {new Date(cita.fechaHora).toLocaleDateString("es-ES")}
-                  </td>
-                  <td className="px-6 py-4">
-                    {new Date(cita.fechaHora).toLocaleTimeString("es-ES", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                  <td className="px-6 py-4 rounded-r-xl text-center flex gap-2 justify-center">
-                    <button
-                      onClick={() => abrirModal(cita.id)}
-                      className="px-4 py-2 rounded-lg border text-red-600 font-medium hover:bg-red-600 hover:text-white"
-                    >
-                        Cancelar
+                <tr key={cita.id} className="bg-gray-50 text-sm text-gray-700 hover:bg-gray-200 transition rounded-xl">
+                  <td className="px-6 py-4 rounded-l-xl font-medium">{cita.medicoNombre}</td>
+                  <td className="px-6 py-4">{new Date(cita.fechaHora).toLocaleDateString("es-ES")}</td>
+                  <td className="px-6 py-4">{new Date(cita.fechaHora).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</td>
+                  <td className="px-6 py-4 rounded-r-xl text-center">
+                    <button onClick={() => abrirModal(cita.id)} className="px-4 py-2 rounded-lg border text-red-500 font-medium hover:bg-red-500 hover:text-white transition">
+                      Cancelar
                     </button>
                   </td>
                 </tr>
@@ -111,22 +41,14 @@ export function CitasReservadas() {
 
         {totalPaginas > 1 && (
           <div className="flex items-center justify-between mt-6">
-            <p className="text-sm text-gray-500">
-              Página {paginaActual} de {totalPaginas}
-            </p>
+            <p className="text-sm text-gray-500">Página {paginaActual} de {totalPaginas}</p>
             <div className="flex gap-2">
-              <button
-                onClick={() => setPaginaActual((p) => p - 1)}
-                disabled={paginaActual === 1}
-                className="px-4 py-2 rounded-lg border text-gray-600 font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button onClick={() => setPaginaActual((p) => p - 1)} disabled={paginaActual === 1}
+                className="px-4 py-2 rounded-lg border text-gray-600 font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
                 Anterior
               </button>
-              <button
-                onClick={() => setPaginaActual((p) => p + 1)}
-                disabled={paginaActual === totalPaginas}
-                className="px-4 py-2 rounded-lg border text-gray-600 font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button onClick={() => setPaginaActual((p) => p + 1)} disabled={paginaActual === totalPaginas}
+                className="px-4 py-2 rounded-lg border text-gray-600 font-medium hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
                 Siguiente
               </button>
             </div>
@@ -134,27 +56,14 @@ export function CitasReservadas() {
         )}
       </section>
 
-      {/* Modal */}
       {modal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">
-              ¿Quieres cancelar la cita?
-            </h4>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={cerrarModal}
-                className="px-4 py-2 rounded-lg border text-gray-600 font-medium hover:bg-gray-100"
-              >
-                Volver atrás
-              </button>
-              <button
-                onClick={() => handleCancelar(modal)}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancelar cita
-              </button>
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm text-center">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">¿Cancelar cita?</h4>
+            <p className="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer.</p>
+            <div className="flex justify-center gap-3">
+              <button onClick={cerrarModal} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 transition">Volver</button>
+              <button onClick={() => handleCancelar(modal)} className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition">Cancelar cita</button>
             </div>
           </div>
         </div>
