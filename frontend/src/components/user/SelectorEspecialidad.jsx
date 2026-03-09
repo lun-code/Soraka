@@ -37,10 +37,9 @@ export function SelectorEspecialidad({ value, onChange }) {
           focus:ring-blue-500
           focus:outline-none"
       >
-        {" "}
         // Primer onChange es del HTML, el segundo la funcion del padre.
         <option value="" disabled>
-          Seleciona una especialidad
+          Selecciona una especialidad
         </option>
         {especialidades.map((especialidad) => (
           <option key={especialidad.id} value={especialidad.nombre}>

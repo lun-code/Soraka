@@ -1,5 +1,5 @@
 import { useAuth } from "../../contexts/AuthContext";
-import { useCitasDisponibles } from "../../hooks/useCitasDisponibles";
+import { useCitasDisponibles } from "../../hooks/user/useCitasDisponibles";
 
 export function TablaCitasDisponibles({ especialidad }) {
   const { apiFetch } = useAuth();

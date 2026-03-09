@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
-import { crearApiFetch } from "../services/api";
 
 const AuthContext = createContext();
 
@@ -46,7 +45,25 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const apiFetch = useCallback(crearApiFetch(logout), [logout]);
+    const apiFetch = useCallback(
+        (url, options) => {
+            const token = localStorage.getItem("token");
+            return fetch(url, {
+                ...options,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    ...options?.headers,
+                },
+            }).then((res) => {
+                if (res.status === 401) {
+                    logout();
+                    return undefined;
+                }
+                return res;
+            });
+        },
+        [logout]
+    );
 
     return (
         <AuthContext.Provider value={{ usuario, login, logout, apiFetch }}>

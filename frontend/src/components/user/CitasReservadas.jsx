@@ -1,5 +1,5 @@
 import { useAuth } from "../../contexts/AuthContext";
-import { useCitasReservadas } from "../../hooks/useCitasReservadas";
+import { useCitasReservadas } from "../../hooks/user/useCitasReservadas";
 
 export function CitasReservadas() {
   const { apiFetch } = useAuth();

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getCitasDisponibles, reservarCita } from "../services/citaService";
+import { getCitasDisponibles, reservarCita } from "../../services/citaService";
 
 const CITAS_POR_PAGINA = 5;
 

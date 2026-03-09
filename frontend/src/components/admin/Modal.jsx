@@ -1,14 +1,5 @@
 import { X } from "lucide-react";
 
-/**
- * Modal genérico reutilizable.
- * Props:
- *  - open: boolean
- *  - onClose: fn
- *  - title: string
- *  - children: ReactNode
- *  - footer: ReactNode (opcional, botones personalizados)
- */
 export function Modal({ open, onClose, title, children, footer }) {
   if (!open) return null;
 
