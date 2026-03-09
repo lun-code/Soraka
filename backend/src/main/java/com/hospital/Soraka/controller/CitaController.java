@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+
 
 import java.util.List;
 
@@ -130,13 +132,14 @@ public class CitaController {
      */
     @PostMapping("/{id}/reservar")
     @PreAuthorize("hasAuthority('PACIENTE')")
-    public void reservarCita(
+    public ResponseEntity<Void> reservarCita(
             @PathVariable Long id,
             @RequestBody @Valid ReservarCitaDTO dto,
             Authentication authentication
     ) {
         Usuario paciente = (Usuario) authentication.getPrincipal();
         citaService.reservarCita(id, paciente, dto);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -147,8 +150,9 @@ public class CitaController {
      */
     @PostMapping("/{id}/cancelar")
     @PreAuthorize("hasAuthority('PACIENTE') or hasAuthority('MEDICO') or hasAuthority('ADMIN')")
-    public void cancelarCita(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Void> cancelarCita(@PathVariable Long id, Authentication authentication) {
         Usuario usuario = (Usuario) authentication.getPrincipal();
         citaService.cancelarCita(id, usuario);
+        return ResponseEntity.noContent().build();
     }
 }

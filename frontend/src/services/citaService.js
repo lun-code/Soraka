@@ -21,12 +21,20 @@ export const reservarCita = async (apiFetch, citaId, motivo) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ motivo }),
     });
-    return res.json();
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "Error al reservar la cita");
+    }
 };
 
 export const cancelarCita = async (apiFetch, citaId) => {
     const res = await apiFetch(`${BASE_URL}/api/citas/${citaId}/cancelar`, {
         method: "POST",
     });
-    return res.json();
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "Error al cancelar la cita");
+    }
 };
