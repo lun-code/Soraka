@@ -1,4 +1,4 @@
-import { Users, Stethoscope, BookOpen, CalendarDays, CalendarCheck, CalendarX } from "lucide-react";
+import { Users, Stethoscope, Library, CalendarDays, CalendarCheck2, CalendarX } from "lucide-react";
 import { NavbarAdmin } from "../../components/admin/NavBarAdmin";
 import { StatCard } from "../../components/admin/StatCard";
 import { useAuth } from "../../contexts/AuthContext";
@@ -21,9 +21,9 @@ export function DashboardAdmin() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <StatCard icon={<Users size={24} className="text-white" />} label="Pacientes registrados" value={stats?.usuarios?.length} color="bg-blue-600" />
             <StatCard icon={<Stethoscope size={24} className="text-white" />} label="Médicos" value={stats?.medicos?.length} color="bg-indigo-600" />
-            <StatCard icon={<BookOpen size={24} className="text-white" />} label="Especialidades" value={stats?.especialidades?.length} color="bg-violet-600" />
+            <StatCard icon={<Library  size={24} className="text-white" />} label="Especialidades" value={stats?.especialidades?.length} color="bg-purple-600" />
             <StatCard icon={<CalendarDays size={24} className="text-white" />} label="Total de citas" value={stats?.citas?.length} color="bg-gray-700" />
-            <StatCard icon={<CalendarCheck size={24} className="text-white" />} label="Citas disponibles" value={stats?.citasDisponibles?.length} color="bg-emerald-600" />
+            <StatCard icon={<CalendarCheck2  size={24} className="text-white" />} label="Citas disponibles" value={stats?.citasDisponibles?.length} color="bg-green-600" />
             <StatCard icon={<CalendarX size={24} className="text-white" />} label="Citas reservadas" value={stats?.citasReservadas?.length} color="bg-orange-500" />
           </div>
         )}

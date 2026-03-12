@@ -52,6 +52,11 @@ public class GlobalExceptionHandler {
         return construirResponse(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(OperacionNoPermitidaException.class)
+    public ResponseEntity<Map<String, Object>> manejarOperacionNoPermitida(OperacionNoPermitidaException ex) {
+        return construirResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
+    }    
+
     // =======================
     // Excepciones de Medico
     // =======================

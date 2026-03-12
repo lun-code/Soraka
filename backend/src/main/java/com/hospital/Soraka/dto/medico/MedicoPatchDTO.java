@@ -5,7 +5,7 @@ public class MedicoPatchDTO {
     // ATRIBUTOS
     private Long usuarioId;
     private Long especialidadId;
-
+    private String urlFoto;
 
     // GETTERS Y SETTERS
     public Long getUsuarioId() {
@@ -22,5 +22,13 @@ public class MedicoPatchDTO {
 
     public void setEspecialidadId(Long especialidadId) {
         this.especialidadId = especialidadId;
+    }
+
+    public String getUrlFoto() {
+        return urlFoto;
+    }
+
+    public void setUrlFoto(String urlFoto){
+        this.urlFoto = urlFoto;
     }
 }

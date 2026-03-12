@@ -6,7 +6,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useAdminMedicos } from "../../hooks/admin/useAdminMedicos";
 
 const columns = [
-  { key: "id", label: "ID" },
   { key: "nombreUsuario", label: "Nombre" },
   { key: "emailUsuario", label: "Email" },
   { key: "nombreEspecialidad", label: "Especialidad" },
@@ -31,19 +30,19 @@ export function AdminMedicos() {
     <div>
       <NavbarAdmin />
       <main className="max-w-6xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800">Médicos</h2>
-            <p className="text-gray-500 text-sm mt-1">Gestiona el equipo médico</p>
-          </div>
-          <button
-            onClick={abrirCrear}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition"
-          >
-            <Plus size={16} />
-            Nuevo médico
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800">Médicos</h2>
+          <p className="text-gray-500 text-sm mt-1">Gestiona el equipo médico</p>
         </div>
+        <button
+          onClick={abrirCrear}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition self-start sm:self-auto"
+        >
+          <Plus size={16} />
+          Nuevo médico
+        </button>
+      </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <TablaAdmin

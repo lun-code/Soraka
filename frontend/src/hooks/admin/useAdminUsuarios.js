@@ -4,23 +4,40 @@ import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from "../../
 const FORM_VACIO = { nombre: "", email: "", password: "", rol: "PACIENTE" };
 
 export function useAdminUsuarios(apiFetch) {
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalForm, setModalForm] = useState(false);
+  const [usuarios, setUsuarios]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [filtroRol, setFiltroRol]       = useState("TODOS");
+  const [modalForm, setModalForm]       = useState(false);
   const [modalEliminar, setModalEliminar] = useState(null);
-  const [editando, setEditando] = useState(null);
-  const [form, setForm] = useState(FORM_VACIO);
-  const [error, setError] = useState("");
-  const [guardando, setGuardando] = useState(false);
+  const [editando, setEditando]         = useState(null);
+  const [form, setForm]                 = useState(FORM_VACIO);
+  const [error, setError]               = useState("");
+  const [guardando, setGuardando]       = useState(false);
 
   const cargar = () => {
     setLoading(true);
     getUsuarios(apiFetch)
-      .then(setUsuarios)
+      .then((data) => {
+        const orden = { ADMIN: 0, MEDICO: 1, PACIENTE: 2 };
+        setUsuarios(data.sort((a, b) => orden[a.rol] - orden[b.rol]));
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(cargar, []);
+
+  // ── Usuarios filtrados ───────────────────────────────────────────────────────
+  const usuariosFiltrados = filtroRol === "TODOS"
+    ? usuarios
+    : usuarios.filter((u) => u.rol === filtroRol);
+
+  // ── Contadores por rol ───────────────────────────────────────────────────────
+  const contadores = {
+    TODOS:    usuarios.length,
+    ADMIN:    usuarios.filter((u) => u.rol === "ADMIN").length,
+    MEDICO:   usuarios.filter((u) => u.rol === "MEDICO").length,
+    PACIENTE: usuarios.filter((u) => u.rol === "PACIENTE").length,
+  };
 
   const abrirCrear = () => {
     setEditando(null);
@@ -79,7 +96,8 @@ export function useAdminUsuarios(apiFetch) {
   };
 
   return {
-    usuarios, loading,
+    usuarios: usuariosFiltrados, loading,
+    filtroRol, setFiltroRol, contadores,
     modalForm, modalEliminar, editando, form, error, guardando,
     setForm, setModalEliminar,
     abrirCrear, abrirEditar, cerrarForm, handleGuardar, handleEliminar,

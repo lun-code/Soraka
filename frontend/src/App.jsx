@@ -3,8 +3,10 @@ import './App.css'
 import { Home } from "./pages/home/Home"
 import { Login } from "./pages/home/Login"
 import { Especialistas } from './pages/home/Especialistas';
+import { Contacto } from './pages/home/Contacto';
 import { DashboardUsuario } from './pages/user/DashboardUsuario';
 import { MisCitas } from './pages/user/MisCitas';
+import { MiPerfil } from './pages/user/MiPerfil';
 import { DashboardAdmin } from './pages/admin/DashboardAdmin';
 import { AdminUsuarios } from './pages/admin/AdminUsuarios';
 import { AdminMedicos } from './pages/admin/AdminMedicos';
@@ -26,6 +28,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/especialistas" element={<Especialistas />} />
+            <Route path="/contacto" element={<Contacto />} />
 
             {/* ── Paciente ───────────────────────────────── */}
             <Route
@@ -41,6 +44,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["PACIENTE"]}>
                   <MisCitas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/mi-perfil'
+              element={
+                <ProtectedRoute allowedRoles={["PACIENTE"]}>
+                  <MiPerfil />
                 </ProtectedRoute>
               }
             />

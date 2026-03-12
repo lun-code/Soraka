@@ -1,4 +1,4 @@
-import { NavBarDefault } from "../../components/home/NavBarDefault";
+import { NavBarPublica } from "../../components/home/NavBarPublica";
 import { Hero } from "../../components/home/Hero";
 import { Footer } from "../../components/home/Footer";
 import { useAuth } from "../../contexts/AuthContext";
@@ -32,7 +32,7 @@ export function Home() {
 
   return (
     <div>
-      <NavBarDefault />
+      <NavBarPublica />
       <Hero />
       <Footer />
     </div>

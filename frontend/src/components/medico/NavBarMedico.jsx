@@ -6,7 +6,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import {
   Navbar,
   Collapse,
-  Typography,
   Button,
   IconButton,
 } from "@material-tailwind/react";
@@ -15,29 +14,24 @@ const navItems = [
   { name: "Mis citas", path: "/medico", icon: <CalendarDays size={18} /> },
 ];
 
-function NavList({ location }) {
+function NavList({ location, closeMenu }) {
   return (
-    <ul className="flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-12">
+    <ul className="flex flex-col gap-2 mt-4 lg:mt-0 lg:flex-row lg:items-center lg:gap-6">
       {navItems.map((item) => (
-        <Typography
-          key={item.name}
-          as="li"
-          variant="small"
-          color="white"
-          className="flex justify-center"
-        >
+        <li key={item.name} className="w-full lg:w-auto">
           <Link
             to={item.path}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+            onClick={closeMenu}
+            className={`flex items-center gap-3 px-4 py-4 lg:py-2 rounded-xl text-sm font-bold transition-all ${
               location.pathname === item.path
-                ? "bg-white text-[#172554]"
-                : "text-white hover:text-blue-200"
+                ? "bg-white text-[#172554] shadow-md"
+                : "text-white hover:bg-white/10"
             }`}
           >
             {item.icon}
-            {item.name}
+            <span>{item.name}</span>
           </Link>
-        </Typography>
+        </li>
       ))}
     </ul>
   );
@@ -50,6 +44,7 @@ export function NavbarMedico() {
   const location = useLocation();
 
   const handleLogout = () => {
+    setOpenNav(false);
     logout();
     navigate("/", { replace: true });
   };
@@ -62,52 +57,50 @@ export function NavbarMedico() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    setOpenNav(false);
-  }, [location.pathname]);
-
   return (
-    <div className="w-full">
-      <Navbar className="w-full max-w-full rounded-none border-none bg-[#172554] bg-opacity-100 py-0 lg:h-28">
+    <div className="w-full bg-[#172554]">
+      <Navbar
+        fullWidth
+        blurred={false}
+        shadow={false}
+        className="max-w-full border-none bg-[#172554] px-4 py-3 lg:px-10 lg:h-24"
+      >
         <div className="flex h-full items-center justify-between text-white">
 
-          <Link to="/medico" className="cursor-pointer">
-            <div className="flex items-center gap-4">
-              <img
-                src={logo}
-                alt="logo"
-                className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto shrink-0 rounded-full border-2 border-white/20 shadow-sm"
-                loading="lazy"
-              />
-              <span className="text-2xl font-bold hidden sm:block tracking-tight">
-                Clínica Virtual
-              </span>
-            </div>
+          {/* Logo */}
+          <Link to="/medico" className="flex items-center gap-3 shrink-0">
+            <img
+              src={logo}
+              alt="logo"
+              className="h-12 lg:h-16 w-auto rounded-full border-2 border-white/20"
+            />
+            <span className="text-xl font-bold hidden sm:block tracking-tight">
+              Clínica Virtual
+            </span>
           </Link>
 
-          <div className="hidden lg:flex items-center">
+          {/* Navegación Desktop */}
+          <div className="hidden lg:block ml-auto mr-8">
             <NavList location={location} />
           </div>
 
-          <div className="flex items-center gap-x-1">
+          {/* Botón Salir Desktop */}
+          <div className="hidden lg:flex items-center border-l border-white/20 pl-8">
             <Button
-              variant="gradient"
-              size="lg"
-              color="pink"
-              className="hidden lg:inline-block px-10 py-3 text-gray-200 text-base shadow-xl hover:scale-105 transition-transform"
+              variant="filled"
+              size="sm"
+              className="flex items-center gap-2 font-bold bg-red-500 hover:bg-red-600 text-white capitalize shadow-md px-5 py-2.5 rounded-xl transition-all"
               onClick={handleLogout}
             >
-              <span className="flex items-center gap-2">
-                <LogOut size={16} />
-                Cerrar sesión
-              </span>
+              <LogOut size={18} />
+              Cerrar sesión
             </Button>
           </div>
 
+          {/* Icono Hamburguesa */}
           <IconButton
             variant="text"
-            className="ml-auto h-10 w-10 text-white hover:bg-white/10 lg:hidden"
-            ripple={false}
+            className="ml-auto h-12 w-12 text-white lg:hidden"
             onClick={() => setOpenNav(!openNav)}
           >
             {openNav ? (
@@ -122,18 +115,18 @@ export function NavbarMedico() {
           </IconButton>
         </div>
 
-        <Collapse open={openNav} className="bg-[#172554] px-4">
-          <NavList location={location} />
-          <Button
-            fullWidth
-            variant="gradient"
-            size="lg"
-            className="mt-4 text-[#172554] font-bold"
-            color="white"
-            onClick={handleLogout}
-          >
-            Cerrar sesión
-          </Button>
+        {/* Menú Móvil */}
+        <Collapse open={openNav} className="bg-[#172554]">
+          <div className="py-4 flex flex-col gap-2 border-t border-white/10 mt-2">
+            <NavList location={location} closeMenu={() => setOpenNav(false)} />
+            <button
+              onClick={handleLogout}
+              className="flex items-center justify-center gap-3 px-4 py-4 mt-4 rounded-xl text-sm font-bold bg-red-500 text-white shadow-lg active:scale-95 transition-all w-full"
+            >
+              <LogOut size={18} className="stroke-[2.5px]" />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
         </Collapse>
       </Navbar>
     </div>

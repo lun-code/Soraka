@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getMisCitasMedico } from "../../services/citaService";
 
-export function useCitasMedico(apiFetch) {
+export function useCitasMedicos(apiFetch) {
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
 

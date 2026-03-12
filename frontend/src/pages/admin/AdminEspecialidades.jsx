@@ -6,7 +6,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useAdminEspecialidades } from "../../hooks/admin/useAdminEspecialidades";
 
 const columns = [
-  { key: "id", label: "ID" },
   { key: "nombre", label: "Nombre" },
 ];
 
@@ -23,19 +22,19 @@ export function AdminEspecialidades() {
     <div>
       <NavbarAdmin />
       <main className="max-w-6xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800">Especialidades</h2>
-            <p className="text-gray-500 text-sm mt-1">Gestiona las especialidades médicas</p>
-          </div>
-          <button
-            onClick={abrirCrear}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition"
-          >
-            <Plus size={16} />
-            Nueva especialidad
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800">Especialidades</h2>
+          <p className="text-gray-500 text-sm mt-1">Gestiona las especialidades médicas</p>
         </div>
+        <button
+          onClick={abrirCrear}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition self-start sm:self-auto"
+        >
+          <Plus size={16} />
+          Nueva especialidad
+        </button>
+      </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-md mx-auto">
           <TablaAdmin

@@ -1,11 +1,11 @@
 import { NavbarMedico } from "../../components/medico/NavbarMedico";
 import { TablaCitasMedico } from "../../components/medico/TablaCitasMedico";
 import { useAuth } from "../../contexts/AuthContext";
-import { useCitasMedico } from "../../hooks/medico/useCitasMedico";
+import { useCitasMedicos } from "../../hooks/medico/useCitasMedicos";
 
 export function DashboardMedico() {
   const { apiFetch, usuario } = useAuth();
-  const { citas, loading } = useCitasMedico(apiFetch);
+  const { citas, loading } = useCitasMedicos(apiFetch);
 
   return (
     <div>

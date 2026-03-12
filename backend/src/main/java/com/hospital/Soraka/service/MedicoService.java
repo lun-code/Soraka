@@ -19,6 +19,9 @@ import com.hospital.Soraka.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 
 import java.util.List;
 
@@ -49,6 +52,9 @@ public class MedicoService {
 
     @Autowired
     private EspecialidadRepository especialidadRepository;
+
+    @PersistenceContext
+    private EntityManager em;
 
     /**
      * Obtiene todos los médicos registrados en el sistema.
@@ -132,7 +138,13 @@ public class MedicoService {
         if(!medicoRepository.existsById(id)){
             throw new MedicoNotFoundException("El médico no existe");
         }
-        medicoRepository.deleteById(id);
+        em.createNativeQuery("DELETE FROM citas WHERE medico_id = :id")
+            .setParameter("id", id)
+            .executeUpdate();
+        em.createNativeQuery("DELETE FROM medicos WHERE id = :id")
+            .setParameter("id", id)
+            .executeUpdate();
+        em.clear();
     }
 
     /**
@@ -173,6 +185,10 @@ public class MedicoService {
             }
 
             existente.setUsuario(usuario);
+        }
+
+        if(medicoDTO.getUrlFoto() != null){
+            existente.setUrlFoto(medicoDTO.getUrlFoto());
         }
 
         Medico guardado = medicoRepository.save(existente);

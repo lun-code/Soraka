@@ -9,15 +9,16 @@ function toInputDatetime(fechaHora) {
 }
 
 export function useAdminCitas(apiFetch) {
-  const [citas, setCitas] = useState([]);
-  const [medicos, setMedicos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalForm, setModalForm] = useState(false);
+  const [citas, setCitas]               = useState([]);
+  const [medicos, setMedicos]           = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [filtroEstado, setFiltroEstado] = useState("TODAS");
+  const [modalForm, setModalForm]       = useState(false);
   const [modalEliminar, setModalEliminar] = useState(null);
-  const [editando, setEditando] = useState(null);
-  const [form, setForm] = useState(FORM_VACIO);
-  const [error, setError] = useState("");
-  const [guardando, setGuardando] = useState(false);
+  const [editando, setEditando]         = useState(null);
+  const [form, setForm]                 = useState(FORM_VACIO);
+  const [error, setError]               = useState("");
+  const [guardando, setGuardando]       = useState(false);
 
   const cargar = () => {
     setLoading(true);
@@ -27,6 +28,20 @@ export function useAdminCitas(apiFetch) {
   };
 
   useEffect(cargar, []);
+
+  // ── Citas filtradas ──────────────────────────────────────────────────────────
+  const citasFiltradas = filtroEstado === "TODAS"
+    ? citas
+    : citas.filter((c) => c.estado === filtroEstado);
+
+  // ── Contadores por estado ────────────────────────────────────────────────────
+  const contadores = {
+    TODAS:      citas.length,
+    DISPONIBLE: citas.filter((c) => c.estado === "DISPONIBLE").length,
+    CONFIRMADA: citas.filter((c) => c.estado === "CONFIRMADA").length,
+    REALIZADA:  citas.filter((c) => c.estado === "REALIZADA").length,
+    CADUCADA:   citas.filter((c) => c.estado === "CADUCADA").length,
+  };
 
   const abrirEditar = (cita) => {
     setEditando(cita);
@@ -73,7 +88,8 @@ export function useAdminCitas(apiFetch) {
   };
 
   return {
-    citas, medicos, loading,
+    citas: citasFiltradas, medicos, loading,
+    filtroEstado, setFiltroEstado, contadores,
     modalForm, modalEliminar, form, error, guardando,
     setForm, setModalEliminar,
     abrirEditar, cerrarForm, handleGuardar, handleEliminar,

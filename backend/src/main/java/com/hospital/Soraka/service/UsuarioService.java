@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.hospital.Soraka.config.DataInitializer;
+import com.hospital.Soraka.exception.Usuario.OperacionNoPermitidaException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -148,60 +150,104 @@ public class UsuarioService {
         return buildResponse(guardado);
     }
 
+    // ── REEMPLAZA los métodos deleteUsuario y patchUsuario en UsuarioService.java ──
+// Añade el import al inicio del archivo:
+//   import com.hospital.Soraka.config.DataInitializer;
+//   import com.hospital.Soraka.exception.Usuario.OperacionNoPermitidaException;
+
     /**
      * Elimina un usuario del sistema por su ID.
      * <p>
-     * Solo administradores deberían invocar este método desde el controller.
+     * Las cuentas demo ({@link DataInitializer#EMAIL_ADMIN}, {@code EMAIL_MEDICO},
+     * {@code EMAIL_PACIENTE}) no pueden eliminarse para garantizar que los
+     * reclutadores siempre tengan acceso a la demo.
      *
      * @param id Identificador del usuario a eliminar.
-     * @throws UsuarioNotFoundException si el usuario no existe.
+     * @throws UsuarioNotFoundException        si el usuario no existe.
+     * @throws OperacionNoPermitidaException   si se intenta eliminar una cuenta demo.
      */
-    public void deleteUsuario(Long id){
-        if(!usuarioRepository.existsById(id)){
-            throw new UsuarioNotFoundException("Usuario no encontrado");
+    public void deleteUsuario(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+
+        if (esCuentaDemo(usuario.getEmail())) {
+            throw new OperacionNoPermitidaException(
+                    "Las cuentas de demostración no pueden eliminarse.");
         }
+
+        // Borrar token de confirmación si existe antes de eliminar el usuario
+        tokenConfirmacionRepository.findByUsuario(usuario)
+                .ifPresent(tokenConfirmacionRepository::delete);
+
         usuarioRepository.deleteById(id);
     }
 
     /**
      * Actualiza parcialmente los datos de un usuario existente.
      * <p>
-     * Solo administradores deberían invocar este método desde el controller.
-     * Valida reglas de negocio:
-     * <ul>
-     *     <li>Unicidad de email.</li>
-     *     <li>No permite cambiar el rol de un usuario MEDICO con entidad asociada.</li>
-     * </ul>
+     * Las cuentas demo no pueden cambiar de email ni de rol para mantener
+     * la integridad de la demo.
      *
-     * @param id Identificador del usuario a modificar.
-     * @param usuarioDTO DTO con los campos parciales a actualizar.
+     * @param id          Identificador del usuario a modificar.
+     * @param usuarioDTO  DTO con los campos parciales a actualizar.
      * @return {@link UsuarioResponseDTO} con los datos actualizados del usuario.
-     * @throws UsuarioNotFoundException si el usuario no existe.
-     * @throws EmailYaEnUsoException si el email ya está en uso.
-     * @throws CambioRolMedicoNoPermitidoException si se intenta cambiar el rol de un usuario MEDICO con entidad asociada.
+     * @throws UsuarioNotFoundException              si el usuario no existe.
+     * @throws EmailYaEnUsoException                 si el email ya está en uso.
+     * @throws CambioRolMedicoNoPermitidoException   si se intenta cambiar el rol de un MEDICO con entidad.
+     * @throws OperacionNoPermitidaException         si se intenta cambiar email/rol de una cuenta demo.
      */
-    public UsuarioResponseDTO patchUsuario(Long id, UsuarioPatchDTO usuarioDTO){
+    public UsuarioResponseDTO patchUsuario(Long id, UsuarioPatchDTO usuarioDTO) {
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
 
-        if(usuarioDTO.getEmail() != null &&
+        // Proteger cuentas demo: no permitir cambio de email ni de rol
+        if (esCuentaDemo(existente.getEmail())) {
+            if (usuarioDTO.getEmail() != null &&
+                    !usuarioDTO.getEmail().equals(existente.getEmail())) {
+                throw new OperacionNoPermitidaException(
+                        "No se puede cambiar el email de una cuenta de demostración.");
+            }
+            if (usuarioDTO.getRol() != null &&
+                    !usuarioDTO.getRol().equals(existente.getRol())) {
+                throw new OperacionNoPermitidaException(
+                        "No se puede cambiar el rol de una cuenta de demostración.");
+            }
+        }
+
+        if (usuarioDTO.getEmail() != null &&
                 !usuarioDTO.getEmail().equals(existente.getEmail()) &&
                 usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
             throw new EmailYaEnUsoException("El email ya está en uso");
         }
 
-        if(usuarioDTO.getNombre() != null) existente.setNombre(usuarioDTO.getNombre());
-        if(usuarioDTO.getEmail() != null) existente.setEmail(usuarioDTO.getEmail());
+        if (usuarioDTO.getNombre() != null)   existente.setNombre(usuarioDTO.getNombre());
+        if (usuarioDTO.getEmail() != null)    existente.setEmail(usuarioDTO.getEmail());
+        if (usuarioDTO.getIsActivo() != null) existente.setActivo(usuarioDTO.getIsActivo());
 
-        if(usuarioDTO.getRol() != null && !usuarioDTO.getRol().equals(existente.getRol())) {
-            if(existente.getRol() == Rol.MEDICO && medicoRepository.existsByUsuario(existente)) {
-                throw new CambioRolMedicoNoPermitidoException("No se puede cambiar el rol de un usuario MEDICO con entidad Medico asociada");
+        if (usuarioDTO.getRol() != null && !usuarioDTO.getRol().equals(existente.getRol())) {
+            if (existente.getRol() == Rol.MEDICO && medicoRepository.existsByUsuario(existente)) {
+                throw new CambioRolMedicoNoPermitidoException(
+                        "No se puede cambiar el rol de un usuario MEDICO con entidad Medico asociada");
             }
             existente.setRol(usuarioDTO.getRol());
         }
 
+        if (usuarioDTO.getPassword() != null && !usuarioDTO.getPassword().isBlank()) {
+            existente.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        }
+
         Usuario actualizado = usuarioRepository.save(existente);
         return buildResponse(actualizado);
+    }
+
+    // ── Helper privado ───────────────────────────────────────────────────────────
+
+    private boolean esCuentaDemo(String email) {
+        return DataInitializer.EMAIL_ADMIN.equals(email)
+                || DataInitializer.EMAIL_MEDICO.equals(email)
+                || DataInitializer.EMAIL_MEDICO_PEDIATRIA.equals(email)
+                || DataInitializer.EMAIL_MEDICO_DERMATO.equals(email)
+                || DataInitializer.EMAIL_PACIENTE.equals(email);
     }
 
     /**

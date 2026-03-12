@@ -3,6 +3,13 @@ import { ModalDetalleCita } from "./ModalDetalleCita";
 
 const CITAS_POR_PAGINA = 8;
 
+const coloresEstado = {
+  DISPONIBLE: "bg-green-100 text-green-700",
+  CONFIRMADA: "bg-orange-100 text-orange-700",
+  REALIZADA:  "bg-blue-100 text-blue-700",
+  CADUCADA:   "bg-red-100 text-red-500",
+};
+
 function formatFecha(fechaHora) {
   if (!fechaHora) return "—";
   return new Date(fechaHora).toLocaleString("es-ES", {
@@ -23,7 +30,8 @@ export function TablaCitasMedico({ citas, loading }) {
 
   return (
     <>
-      <div className="overflow-x-auto">
+      {/* ── Tabla (md+) ──────────────────────────────────────────────────────── */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full border-separate border-spacing-y-3">
           <thead>
             <tr className="text-left text-sm uppercase tracking-wide text-white bg-gray-800">
@@ -41,7 +49,7 @@ export function TablaCitasMedico({ citas, loading }) {
                 <td className="px-6 py-3 text-gray-700">{cita.pacienteNombre ?? <span className="text-gray-400 italic">Sin asignar</span>}</td>
                 <td className="px-6 py-3 text-gray-500 max-w-xs truncate">{cita.motivo ?? "—"}</td>
                 <td className="px-6 py-3 text-center">
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${coloresEstado[cita.estado] ?? "bg-gray-100 text-gray-600"}`}>
                     {cita.estado}
                   </span>
                 </td>
@@ -59,6 +67,35 @@ export function TablaCitasMedico({ citas, loading }) {
         </table>
       </div>
 
+      {/* ── Tarjetas (móvil) ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {citasPagina.map((cita) => (
+          <div key={cita.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-gray-800">{formatFecha(cita.fechaHora)}</p>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 ${coloresEstado[cita.estado] ?? "bg-gray-100 text-gray-600"}`}>
+                {cita.estado}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">
+              <span className="font-medium text-gray-700">
+                {cita.pacienteNombre ?? <span className="italic text-gray-400">Sin asignar</span>}
+              </span>
+              {cita.motivo ? ` · ${cita.motivo}` : ""}
+            </p>
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={() => setCitaSeleccionada(cita)}
+                className="px-3 py-1.5 rounded-lg border border-blue-600 text-blue-600 text-xs font-medium hover:bg-blue-600 hover:text-white transition"
+              >
+                Ver detalle
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Paginación ───────────────────────────────────────────────────────── */}
       {totalPaginas > 1 && (
         <div className="flex items-center justify-between mt-6">
           <p className="text-sm text-gray-500">Página {pagina} de {totalPaginas}</p>
