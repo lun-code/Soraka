@@ -1,4 +1,4 @@
-import { NavbarMedico } from "../../components/medico/NavbarMedico";
+import { NavbarMedico } from "../../components/medico/NavBarMedico";
 import { TablaCitasMedico } from "../../components/medico/TablaCitasMedico";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCitasMedicos } from "../../hooks/medico/useCitasMedicos";
