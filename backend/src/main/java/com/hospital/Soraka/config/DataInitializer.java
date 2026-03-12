@@ -113,15 +113,15 @@ public class DataInitializer implements ApplicationRunner {
      * para los próximos 7 días, omitiendo los slots que ya existan.
      */
     private void generarCitasFuturas(Medico medico) {
-        LocalDate hoy       = LocalDate.now();
-        LocalDate fechaFin  = hoy.plusDays(7);
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDate hoy = LocalDate.now();
+        // Bajamos a 3 días para no saturar la RAM en Railway
+        LocalDate fechaFin = hoy.plusDays(3); 
+        
+        java.util.List<Cita> nuevasCitas = new java.util.ArrayList<>();
 
-        for (LocalDate fecha = hoy.plusDays(1); !fecha.isAfter(fechaFin);
-             fecha = fecha.plusDays(1)) {
-
+        for (LocalDate fecha = hoy.plusDays(1); !fecha.isAfter(fechaFin); fecha = fecha.plusDays(1)) {
             LocalDateTime slot = fecha.atTime(8, 0);
-            LocalDateTime fin  = fecha.atTime(15, 0);
+            LocalDateTime fin = fecha.atTime(15, 0);
 
             while (slot.isBefore(fin)) {
                 if (!citaRepository.existsByMedicoAndFechaHora(medico, slot)) {
@@ -129,10 +129,15 @@ public class DataInitializer implements ApplicationRunner {
                     cita.setMedico(medico);
                     cita.setFechaHora(slot);
                     cita.setEstado(EstadoCita.DISPONIBLE);
-                    citaRepository.save(cita);
+                    nuevasCitas.add(cita);
                 }
                 slot = slot.plusMinutes(30);
             }
+        }
+        // Guardamos todas de golpe al final del bucle del médico
+        if (!nuevasCitas.isEmpty()) {
+            citaRepository.saveAll(nuevasCitas);
+            citaRepository.flush(); // Aseguramos que se escriba y libere memoria
         }
     }
 
