@@ -62,6 +62,17 @@ public class SecurityConfig {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
+     * Origen permitido para las peticiones CORS.
+     * <p>
+     * Se inyecta desde la variable de entorno {@code CORS_ALLOWED_ORIGIN}
+     * a través de la propiedad {@code cors.allowed-origin} del archivo
+     * {@code application.properties}.
+     * </p>
+     */
+    @Value("${cors.allowed-origin}")
+    private String allowedOrigin;
+
+    /**
      * Define el codificador de contraseñas utilizado para
      * almacenar y validar credenciales.
      *
@@ -164,7 +175,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of(allowedOrigin));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
