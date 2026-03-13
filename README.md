@@ -52,6 +52,7 @@ La aplicación incluye cuentas preconfiguradas para explorar todas las funcional
 - **Dashboard del médico** con agenda de citas propias
 - **Portal del paciente** para consultar especialistas, reservar y cancelar citas
 - **Listado público** de especialistas sin necesidad de autenticación
+- **Rate limiting** en el endpoint de login: máximo 5 intentos por IP cada 60 segundos
 - **Reset automático** del entorno demo cada 30 minutos
 - **Fotos de médicos** gestionadas por URL
 - **CORS configurable** por variable de entorno
@@ -63,6 +64,7 @@ La aplicación incluye cuentas preconfiguradas para explorar todas las funcional
 ### Backend
 - **Java 21 + Spring Boot 3.5.9**
 - **Spring Security + JWT (jjwt 0.11.5)** — autenticación stateless
+- **Bucket4j 8.10.1** — rate limiting por IP en el endpoint de login
 - **JPA / Hibernate** — acceso a base de datos
 - **MySQL 8.0** — base de datos relacional
 - **JavaMailSender** — envío de emails de confirmación
@@ -202,7 +204,7 @@ docker-compose up -d --build
 
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
-| `POST` | `/auth/login` | Público | Iniciar sesión |
+| `POST` | `/auth/login` | Público | Iniciar sesión (máx. 5 intentos/min por IP) |
 | `POST` | `/auth/register` | ADMIN | Registrar nuevo usuario |
 | `GET` | `/auth/confirmar?token=...` | Público | Confirmar cuenta por email |
 
@@ -211,6 +213,7 @@ docker-compose up -d --build
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
 | `GET` | `/api/usuarios` | ADMIN | Listar todos los usuarios |
+| `GET` | `/api/usuarios/count` | Público | Número total de usuarios registrados |
 | `GET` | `/api/usuarios/{id}` | ADMIN, propio usuario | Obtener usuario por ID |
 | `PATCH` | `/api/usuarios/{id}` | ADMIN | Modificar usuario |
 | `DELETE` | `/api/usuarios/{id}` | ADMIN | Eliminar usuario |
@@ -219,8 +222,9 @@ docker-compose up -d --build
 
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
-| `GET` | `/api/medicos` | Público | Listar todos los médicos |
-| `GET` | `/api/medicos/{id}` | Público | Obtener médico por ID |
+| `GET` | `/api/medicos/publicos` | Público | Listar médicos (datos básicos) |
+| `GET` | `/api/medicos` | Autenticado | Listar todos los médicos (datos completos) |
+| `GET` | `/api/medicos/{id}` | Autenticado | Obtener médico por ID |
 | `POST` | `/api/medicos` | ADMIN | Crear médico |
 | `PATCH` | `/api/medicos/{id}` | ADMIN | Modificar médico |
 | `DELETE` | `/api/medicos/{id}` | ADMIN | Eliminar médico |
@@ -259,6 +263,8 @@ Debe enviarse en cada petición protegida mediante el header:
 ```
 Authorization: Bearer <token>
 ```
+
+El endpoint `/auth/login` está protegido con rate limiting: **máximo 5 intentos por IP cada 60 segundos**. Si se supera el límite, el servidor responde con `HTTP 429 Too Many Requests`.
 
 ---
 
@@ -308,7 +314,7 @@ Soraka/
 │       ├── enums/          # Enumeraciones (Rol, EstadoCita)
 │       ├── exception/      # Excepciones personalizadas
 │       ├── repository/     # Repositorios Spring Data
-│       ├── security/       # JWT y Spring Security
+│       ├── security/       # JWT, Spring Security y rate limiting
 │       └── service/        # Lógica de negocio
 ├── frontend/
 │   └── src/
