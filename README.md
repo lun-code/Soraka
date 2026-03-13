@@ -76,7 +76,7 @@ La aplicación incluye cuentas preconfiguradas para explorar todas las funcional
 - **jwt-decode** — decodificación del token en cliente
 
 ### Infraestructura
-- **Docker + Docker Compose** — contenedores para backend, base de datos y phpMyAdmin
+- **Docker + Docker Compose** — contenedores para backend y base de datos
 - **Vercel** — despliegue del frontend en producción
 
 ---
@@ -92,14 +92,10 @@ Cliente (Vercel)          Servidor VPS / Cloud
 └─────────────┘           │  │  Boot    │ │   8.0   │  │
                           │  │ :8080    │ │  :3306  │  │
                           │  └──────────┘ └─────────┘  │
-                          │  ┌──────────┐              │
-                          │  │phpMyAdmin│              │
-                          │  │  :8081   │              │
-                          │  └──────────┘              │
                           └────────────────────────────┘
 ```
 
-El frontend está desplegado en **Vercel** y consume la API del backend mediante la variable de entorno `VITE_API_URL`. El backend, la base de datos y phpMyAdmin corren en Docker Compose.
+El frontend está desplegado en **Vercel** y consume la API del backend mediante la variable de entorno `VITE_API_URL`. El backend y la base de datos corren en Docker Compose.
 
 ---
 
@@ -150,9 +146,9 @@ Una vez iniciado, los servicios estarán disponibles en:
 |---|---|
 | Frontend | http://localhost:5173 |
 | API Backend | http://localhost:8080 |
-| phpMyAdmin | http://localhost:8081 |
 
-> **Nota:** El Docker Compose gestiona el backend, la base de datos y phpMyAdmin. El frontend debe ejecutarse por separado con `npm run dev`.
+> **Nota:** El Docker Compose gestiona el backend y la base de datos. El frontend debe ejecutarse por separado con `npm run dev`.
+> Si necesitas phpMyAdmin en local, crea manualmente un fichero `docker-compose.override.yml` en la raíz del proyecto con el servicio de phpMyAdmin. Este fichero está ignorado por git y no se despliega en producción.
 
 ---
 
@@ -256,7 +252,9 @@ docker-compose up -d --build
 
 ### Seguridad
 
-El token JWT se genera al hacer login e incluye `nombre`, `email` y `rol` como claims. Debe enviarse en cada petición protegida mediante el header:
+El token JWT se genera al hacer login e incluye `nombre`, `email` y `rol` como claims.
+
+Debe enviarse en cada petición protegida mediante el header:
 
 ```
 Authorization: Bearer <token>
