@@ -1,5 +1,7 @@
 package com.hospital.Soraka.exception;
 
+import com.hospital.Soraka.exception.Confirmacion.TokenExpiradoException;
+import com.hospital.Soraka.exception.Confirmacion.TokenInvalidoException;
 import com.hospital.Soraka.exception.Especialidad.EspecialidadExisteException;
 import com.hospital.Soraka.exception.Especialidad.EspecialidadInvalidaException;
 import com.hospital.Soraka.exception.Especialidad.EspecialidadNotFoundException;
@@ -55,7 +57,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OperacionNoPermitidaException.class)
     public ResponseEntity<Map<String, Object>> manejarOperacionNoPermitida(OperacionNoPermitidaException ex) {
         return construirResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
-    }    
+    }
 
     // =======================
     // Excepciones de Medico
@@ -97,7 +99,7 @@ public class GlobalExceptionHandler {
     // Excepciones de Especialidad
     // =======================
     @ExceptionHandler(EspecialidadNotFoundException.class)
-    public ResponseEntity<Map<String, Object>>  manejarEspecialidadNoEncontrado(EspecialidadNotFoundException ex) {
+    public ResponseEntity<Map<String, Object>> manejarEspecialidadNoEncontrado(EspecialidadNotFoundException ex) {
         return construirResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
@@ -107,8 +109,21 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(EspecialidadExisteException.class)
-    public ResponseEntity<Map<String, Object>>  manejarEspecialidadExiste(EspecialidadExisteException ex) {
+    public ResponseEntity<Map<String, Object>> manejarEspecialidadExiste(EspecialidadExisteException ex) {
         return construirResponse(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    // =======================
+    // Excepciones de Confirmacion
+    // =======================
+    @ExceptionHandler(TokenInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarTokenInvalido(TokenInvalidoException ex) {
+        return construirResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(TokenExpiradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarTokenExpirado(TokenExpiradoException ex) {
+        return construirResponse(ex.getMessage(), HttpStatus.GONE);
     }
 
     // =======================
@@ -132,7 +147,7 @@ public class GlobalExceptionHandler {
     // =======================
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarOtrosErrores(Exception ex) {
-        ex.printStackTrace(); // opcional: log para debugging
+        ex.printStackTrace();
         return construirResponse("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

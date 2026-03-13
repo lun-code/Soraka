@@ -81,7 +81,7 @@ public class AuthController {
         Map<String, Object> claims = new HashMap<>();
         claims.put("nombre", ((Usuario) userDetails).getNombre());
         claims.put("rol", ((Usuario) userDetails).getRol());
-        claims.put("Email", ((Usuario) userDetails).getEmail());
+        claims.put("email", ((Usuario) userDetails).getEmail());
 
         String token = jwtService.generateToken(userDetails, claims);
 
@@ -117,7 +117,8 @@ public class AuthController {
      *
      * @param token Token de confirmación enviado por correo electrónico.
      * @return {@link ResponseEntity} con mensaje de éxito si la cuenta fue activada correctamente.
-     * @throws RuntimeException si el token no existe o ha expirado.
+     * @throws com.hospital.Soraka.exception.Confirmacion.TokenInvalidoException si el token no existe.
+     * @throws com.hospital.Soraka.exception.Confirmacion.TokenExpiradoException si el token ha expirado.
      */
     @GetMapping("/confirmar")
     public ResponseEntity<String> confirmar(@RequestParam String token) {
