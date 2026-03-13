@@ -1,6 +1,6 @@
 import { BASE_URL, handleResponse } from "./api";
 
-export const getUsuariosPublico = async () => {
-    const res = await fetch(`${BASE_URL}/api/usuarios/publico`);
+export const getUsuariosCount = async () => {
+    const res = await fetch(`${BASE_URL}/api/usuarios/count`);
     return handleResponse(res);
 };

@@ -72,6 +72,7 @@ public class MedicoController {
      * @return {@link MedicoResponseDTO} con los datos completos del médico.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public MedicoResponseDTO getMedicoById(@PathVariable Long id) {
         return medicoService.getMedicoById(id);
     }

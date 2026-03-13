@@ -19,7 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.cors.CorsUtils; // Importante para Preflight
+import org.springframework.web.cors.CorsUtils;
 import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 
@@ -125,7 +125,7 @@ public class SecurityConfig {
                     // ENTIDAD: USUARIOS
                     // -------------------------
                     auth
-                            .requestMatchers(HttpMethod.GET, "/api/usuarios/publico").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/usuarios/count").permitAll()
                             .requestMatchers("/api/usuarios/**").authenticated()
                             .requestMatchers("/usuarios/**").authenticated();
 
@@ -178,20 +178,20 @@ public class SecurityConfig {
      *
      * @return {@link CorsConfigurationSource} con la configuración CORS aplicada a todos los endpoints
      */
-     @Bean
-     public CorsConfigurationSource corsConfigurationSource() {
-         CorsConfiguration config = new CorsConfiguration();
-         config.setAllowedOrigins(List.of(allowedOrigin)); 
-         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
-         config.setExposedHeaders(List.of("Authorization")); 
-         config.setAllowCredentials(true);
-         config.setMaxAge(3600L); 
-     
-         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-         source.registerCorsConfiguration("/**", config);
-         return source;
-     }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(allowedOrigin));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 
     /**
      * Expone el {@link AuthenticationManager} proporcionado por

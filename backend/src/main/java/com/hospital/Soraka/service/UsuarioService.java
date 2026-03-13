@@ -26,7 +26,8 @@ import java.util.UUID;
  * <p>
  * Proporciona operaciones de:
  * <ul>
- *     <li>Listado de usuarios completos y públicos.</li>
+ *     <li>Listado de usuarios completos.</li>
+ *     <li>Conteo público de usuarios registrados.</li>
  *     <li>Consulta individual por ID.</li>
  *     <li>Creación de nuevos usuarios con envío de correo de confirmación.</li>
  *     <li>Actualización parcial de usuarios existentes.</li>
@@ -74,15 +75,14 @@ public class UsuarioService {
     }
 
     /**
-     * Obtiene todos los usuarios de rol PACIENTE para uso público.
+     * Devuelve el número total de usuarios registrados en el sistema.
+     * <p>
+     * Accesible públicamente para mostrar estadísticas en la página de inicio.
      *
-     * @return Lista de {@link UsuarioPublicoDTO} con información limitada de cada usuario.
+     * @return Número total de usuarios.
      */
-    public List<UsuarioPublicoDTO> getUsuariosPublico() {
-        return usuarioRepository.findAllByRol(Rol.PACIENTE)
-                .stream()
-                .map(this::buildResponsePublico)
-                .toList();
+    public long countUsuarios() {
+        return usuarioRepository.count();
     }
 
     /**
@@ -150,11 +150,6 @@ public class UsuarioService {
         return buildResponse(guardado);
     }
 
-    // ── REEMPLAZA los métodos deleteUsuario y patchUsuario en UsuarioService.java ──
-// Añade el import al inicio del archivo:
-//   import com.hospital.Soraka.config.DataInitializer;
-//   import com.hospital.Soraka.exception.Usuario.OperacionNoPermitidaException;
-
     /**
      * Elimina un usuario del sistema por su ID.
      * <p>
@@ -175,7 +170,6 @@ public class UsuarioService {
                     "Las cuentas de demostración no pueden eliminarse.");
         }
 
-        // Borrar token de confirmación si existe antes de eliminar el usuario
         tokenConfirmacionRepository.findByUsuario(usuario)
                 .ifPresent(tokenConfirmacionRepository::delete);
 
@@ -200,7 +194,6 @@ public class UsuarioService {
         Usuario existente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
 
-        // Proteger cuentas demo: no permitir cambio de email ni de rol
         if (esCuentaDemo(existente.getEmail())) {
             if (usuarioDTO.getEmail() != null &&
                     !usuarioDTO.getEmail().equals(existente.getEmail())) {
@@ -264,18 +257,6 @@ public class UsuarioService {
                 u.getRol(),
                 u.isActivo(),
                 u.getFechaRegistro()
-        );
-    }
-
-    /**
-     * Construye un DTO de respuesta pública a partir de la entidad {@link Usuario}.
-     *
-     * @param u Entidad {@link Usuario}.
-     * @return {@link UsuarioPublicoDTO} con los datos limitados para uso público.
-     */
-    private UsuarioPublicoDTO buildResponsePublico(Usuario u) {
-        return new UsuarioPublicoDTO(
-                u.getId()
         );
     }
 }

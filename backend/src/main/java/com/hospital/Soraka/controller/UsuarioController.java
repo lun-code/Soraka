@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controlador REST que gestiona operaciones sobre los usuarios del sistema.
@@ -39,13 +40,15 @@ public class UsuarioController {
     }
 
     /**
-     * Obtiene la lista de usuarios públicos (rol PACIENTE) para uso externo.
+     * Devuelve el número total de usuarios registrados.
+     * <p>
+     * Accesible públicamente, sin necesidad de autenticación.
      *
-     * @return Lista de {@link UsuarioPublicoDTO} con información limitada de cada usuario.
+     * @return Mapa con la clave "total" y el número de usuarios.
      */
-    @GetMapping("/publico")
-    public List<UsuarioPublicoDTO> getUsuariosPublico() {
-        return usuarioService.getUsuariosPublico();
+    @GetMapping("/count")
+    public Map<String, Long> countUsuarios() {
+        return Map.of("total", usuarioService.countUsuarios());
     }
 
     /**

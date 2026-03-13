@@ -1,17 +1,17 @@
-import { Shield, Clock, User, ArrowRight } from "lucide-react"; // Iconos limpios
+import { Shield, Clock, User, ArrowRight } from "lucide-react";
 import clinica from "../../assets/clinica.png";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getMedicosPublicos } from "../../services/medicoService";
 import { getEspecialidades } from "../../services/especialidadService";
-import { getUsuariosPublico } from "../../services/usuarioService";
+import { getUsuariosCount } from "../../services/usuarioService";
 
 
 export function Hero() {
 
   const [medicos, setMedicos] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+  const [usuariosCount, setUsuariosCount] = useState(0);
 
   useEffect(() => {
     getMedicosPublicos()
@@ -26,8 +26,8 @@ export function Hero() {
   }, []);
 
   useEffect(() => {
-    getUsuariosPublico()
-      .then(setUsuarios)
+    getUsuariosCount()
+      .then((data) => setUsuariosCount(data.total))
       .catch((err) => console.log("Error cargando usuarios:", err));
   }, []);
 
@@ -60,7 +60,6 @@ export function Hero() {
             </div>
           </div>
           <div className="lg:w-1/2 flex justify-center">
-            {/* Aquí puedes poner una imagen médica */}
             <div className="w-full h-64 md:h-96 bg-blue-200 rounded-2xl shadow-xl flex items-center justify-center text-blue-400 italic">
               <img
                 src={clinica}
@@ -121,7 +120,7 @@ export function Hero() {
       <section className="bg-blue-900 py-12 text-white">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-3 gap-8 text-center">
           <div>
-            <div className="text-4xl font-bold">{usuarios.length}</div>
+            <div className="text-4xl font-bold">{usuariosCount}</div>
             <div className="text-blue-200 uppercase text-sm mt-2">
               Pacientes Felices
             </div>
