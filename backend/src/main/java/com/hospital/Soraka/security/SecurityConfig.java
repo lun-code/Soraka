@@ -34,6 +34,7 @@ import java.util.List;
  * <li>Reglas de autorización por endpoint.</li>
  * <li>Jerarquía de roles.</li>
  * <li>Registro del filtro JWT en la cadena de seguridad.</li>
+ * <li>Registro del filtro de rate limiting en el endpoint de login.</li>
  * <li>Configuración global de CORS.</li>
  * </ul>
  * </p>
@@ -61,6 +62,12 @@ public class SecurityConfig {
      */
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /**
+     * Filtro encargado de limitar los intentos de login por IP.
+     */
+    @Autowired
+    private LoginRateLimitFilter loginRateLimitFilter;
 
     /**
      * Origen permitido para las peticiones CORS.
@@ -161,6 +168,7 @@ public class SecurityConfig {
                     // Cualquier otro endpoint requiere autenticación
                     auth.anyRequest().authenticated();
                 })
+                .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
