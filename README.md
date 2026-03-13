@@ -92,12 +92,12 @@ Cliente (Vercel)          Servidor VPS / Cloud
 │   Vite      │ ────────► │  ┌──────────┐ ┌─────────┐  │
 │  (Vercel)   │           │  │ Spring   │ │  MySQL  │  │
 └─────────────┘           │  │  Boot    │ │   8.0   │  │
-                          │  │ :8080    │ │  :3306  │  │
+                          │  │ :8080    │ │(interno)│  │
                           │  └──────────┘ └─────────┘  │
                           └────────────────────────────┘
 ```
 
-El frontend está desplegado en **Vercel** y consume la API del backend mediante la variable de entorno `VITE_API_URL`. El backend y la base de datos corren en Docker Compose.
+El frontend está desplegado en **Vercel** y consume la API del backend mediante la variable de entorno `VITE_API_URL`. El backend y la base de datos corren en Docker Compose. El puerto de MySQL **no está expuesto** al exterior — solo es accesible internamente por el backend dentro de la red Docker.
 
 ---
 
