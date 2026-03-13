@@ -312,7 +312,7 @@ Soraka/
 │       ├── dto/            # Objetos de transferencia de datos
 │       ├── entity/         # Entidades JPA
 │       ├── enums/          # Enumeraciones (Rol, EstadoCita)
-│       ├── exception/      # Excepciones personalizadas
+│       ├── exception/      # Excepciones personalizadas (Cita, Confirmacion, Especialidad, Medico, Usuario)
 │       ├── repository/     # Repositorios Spring Data
 │       ├── security/       # JWT, Spring Security y rate limiting
 │       └── service/        # Lógica de negocio
