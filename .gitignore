@@ -48,3 +48,4 @@
 .DS_Store
 *.swp
 /.env
+docker-compose.override.yml
