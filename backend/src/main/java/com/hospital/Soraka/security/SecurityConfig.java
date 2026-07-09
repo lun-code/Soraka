@@ -165,6 +165,13 @@ public class SecurityConfig {
                     auth
                             .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll();
 
+                    // -------------------------
+                    // HEALTH CHECK (UptimeRobot / monitorización)
+                    // -------------------------
+                    auth
+                            .requestMatchers(HttpMethod.GET, "/health").permitAll()
+                            .requestMatchers(HttpMethod.HEAD, "/health").permitAll();
+
                     // Cualquier otro endpoint requiere autenticación
                     auth.anyRequest().authenticated();
                 })
