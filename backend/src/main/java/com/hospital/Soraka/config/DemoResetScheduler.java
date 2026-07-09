@@ -23,7 +23,7 @@ public class DemoResetScheduler {
     @Autowired
     private TransactionTemplate transactionTemplate;
 
-    @Scheduled(fixedDelay = 1800000)
+    @Scheduled(fixedDelay = 1800000, initialDelay = 90000)
     public void resetearDemo() {
         log.info(">>> [DemoReset] Iniciando reset seguro de la base de datos...");
 

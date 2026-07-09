@@ -294,7 +294,7 @@ public class CitaService {
      * Genera automáticamente citas DISPONIBLES para los médicos.
      * Cada cita se crea con paciente = null y estado = DISPONIBLE.
      */
-    @Scheduled(cron = "0 0 1 * * *") // Todos los días a medianoche
+    @Scheduled(cron = "0 0 1 * * *", initialDelay = 60000) // Todos los días a medianoche
     public void generarCitasDisponibles() {
         List<Medico> medicos = medicoRepository.findAll();
         LocalDate hoy = LocalDate.now();
@@ -332,7 +332,7 @@ public class CitaService {
      * </ul>
      * Se ejecuta cada 10 minutos.
      */
-    @Scheduled(fixedDelay = 30000) // cada 30 segundos
+    @Scheduled(fixedDelay = 30000, initialDelay = 60000) // cada 30 segundos
     public void cerrarCitasPasadas() {
         System.out.println(">>> SCHEDULER EJECUTÁNDOSE: " + LocalDateTime.now());
 
